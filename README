@@ -1,0 +1,19 @@
+= Rinari Is Not A Ruby IDE.
+  http://rinari.rubyforge.org
+
+Well, ok it kind of is. Rinari is a set of Emacs Lisp modes that is
+aimed towards making Emacs into a top-notch Ruby and Rails
+development environment.
+
+Copy the directory containing this file into your Emacs lisp
+directory, assumed here to be ~/.emacs.d. Add these lines of code
+to your .emacs file:
+
+  (add-to-list 'load-path "~/.emacs.d/rinari")
+  (require 'rinari)
+
+Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
+included for convienience, but may be out of date. Nxhtml-mode is not
+included because it's rather large, so you should download it here:
+
+  http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html
