@@ -32,4 +32,4 @@ One possible .init file for nxhtml in rinari would be
  nxml-degraded t
  )
 
-
+see http://groups.google.com/group/emacs-on-rails for current discussion
