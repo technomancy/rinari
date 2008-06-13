@@ -4,13 +4,6 @@
 
 ;; Part of Rinari (with pieces taken from emacs-rails)
 
-;;; Todo:
-
-;; - some scripts require arguments so shouldn't need the prefix
-;;   argument, these scripts (generators, etc...) should for review of
-;;   the arguments
-;;   
-
 ;;; Code:
 (require 'ansi-color)
 
@@ -18,10 +11,9 @@
   "eschulte"
   "the default environment to be used when running rails/scripts")
 
-;; TODO:
-;; - should allow to edit options with a prefix argument
 ;;;###autoload
 (defun rails-script (arg)
+  "Run script/*.  Use a prefix argument to edit command line options."
   (interactive "P")
   (let* ((script (expand-file-name
 		  (if (or (equalp ido-mode 'file)
@@ -38,13 +30,50 @@
       ;; server: filter ascii colors and dump to a compilation buffer
       ((string-equal command "server")
        (rails-script-server arg))
+      ;; generate
+      ((string-equal command "generate")
+       (rails-script-generate))
+      ;; destroy
+      ((string-equal command "destroy")
+       (rails-script-destroy arg))      
       ;; all others execute and message the output
       (t
        (message "%s"
 		(shell-command-to-string script))))))
 
+;; generate and destroy
+(defvar rails-script-generators
+  '("controller", "integration_test", "mailer", "migration", "model",
+    "observer", "plugin", "resource", "scaffold", "session_migration"))
+
+(defun rails-script-generate ()
+  "Run script/generate"
+  (interactive)
+  (let* ((what (completing-read "generate what: " rails-script-generators))
+	 (arguments
+	  (read-from-minibuffer
+	   (format "arguments to script/generate %s: " what))))
+    (message "%s"
+	     (shell-command-to-string
+	      (format "%s/script/generate %s %s" (rails-root) what arguments)))))
+
+(defun rails-script-destroy (arg)
+  "Run script/destroy"
+  (interactive "P")
+  (let* ((what (completing-read "destroy what: " rails-script-generators))
+	 (which (read-from-minibuffer
+		 (format "destroy which %s: " what)))
+	 (arguments (if arg
+			(read-from-minibuffer
+			 (format "arguments to script/destroy %s %s: " what which))
+		      "")))
+    (message "%s"
+	     (shell-command-to-string
+	      (format "%s/script/destroy %s %s %s" (rails-root) what which arguments)))))
+
 ;; console
 (defun rails-script-console (arg)
+  "Run script/console.  Use a prefix argument to edit command line options."
   (interactive "P")
   (let* ((arguments (list
 		     (if arg
@@ -76,8 +105,12 @@
   rails logs (should be used with `make-local-variable')")
 
 (defun rails-script-server (arg)
+  "Run script/server.  Prefix arg to edit command line options."
   (interactive "P")
-  (let* ((default-directory (rails-root))
+  (if (and (get-buffer "*server*")
+	   (get-buffer-process "*server*"))
+      (error "server is already running")
+    (let* ((default-directory (rails-root))
 	 (default-arguments (format "-e %s" rails-default-environment))
 	 (arguments (split-string
 		     (if arg
@@ -86,7 +119,6 @@
 			  default-arguments)
 		       default-arguments)
 		     " "))
-	 (mes (message "dir %s" default-directory))
 	 (buffer (apply 'make-comint
 			"server"
 			(concat (rails-root) "/script/server")
@@ -102,9 +134,14 @@
 	   rails-server-compilation-error-regexp-alist)
       ;; simple kill server (not ideal but \C-c\C-c is taken)
       (local-set-key "\C-x\C-c" 'comint-interrupt-subjob)
+      ;; kill process when buffer is killed
+      (set (make-variable-buffer-local 'kill-buffer-hook)
+	   (lambda ()
+	     (let ((proc (get-buffer-process (buffer-name))))
+	       (if proc
+		   (kill-process proc)))))
       (compilation-minor-mode)
-      ;; TODO: add something to kill the process and filter when the buffer is killed
-      (message "started script/server %s" (join-string arguments " ")))))
+      (message "started script/server %s" (join-string arguments " "))))))
 
 (defun rails-script-server-insertion-filter (proc string)
   (with-current-buffer (process-buffer proc)
