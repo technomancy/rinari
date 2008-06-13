@@ -47,6 +47,9 @@
 
 ;; Name functions consistently
 ;; Make rinari a minor mode that doesn't activate for regular ruby-mode.
+;; make `rails-find-action' work with rails2-style view filenames
+;; make `rails-find-action' which will follow forms (maybe w/prefix?)
+;; add key-bindings for rinari minor mode
 
 ;;; Code:
 
@@ -55,9 +58,9 @@
 (require 'inf-ruby)
 (require 'toggle)
 
-(require 'project-local-variables)
 (require 'find-file-in-project)
 (require 'pcmpl-rake)
+(require 'rails-scripts)
 
 ;;;###autoload
 (defun rake (task)
@@ -71,10 +74,6 @@
       dir
     (unless (equal dir "/")
       (rails-root (expand-file-name (concat dir "../"))))))
-
-(defun rails-console ()
-  (interactive)
-  (run-ruby (concat (rails-root) "script/console")))
 
 (defun rails-find-view ()
   "View toggling for rails"
@@ -131,10 +130,18 @@
   (insert "  %>")
   (backward-char 3))
 
+;; keymaps
 (define-key ruby-mode-map (kbd "C-c C-v") 'rails-find-view)
 (define-key ruby-mode-map (kbd "C-c C-t") 'toggle-buffer)
 (define-key ruby-mode-map (kbd "C-c C-M-t") 'ruby-test-file)
-;;(define-key ruby-mode-map (kbd "C-c C-S-t") 'ruby-test-one)
+(define-key ruby-mode-map (kbd "C-c C-S-t") 'ruby-test-one)
+;;
+;; some temporary keymaps (will replace when have minor-mode)
+;; 
+;; ("Key Binding Conventions" node of the Elisp manual)
+(define-key ruby-mode-map (kbd "C-c v s") 'rails-script)
+(define-key ruby-mode-map (kbd "C-c v w") 'rails-script-server)
+(define-key ruby-mode-map (kbd "C-c v c") 'rails-script-console)
 
 ;; nxhtml-mode is the cats!
 (eval-after-load 'nxhtml-mode

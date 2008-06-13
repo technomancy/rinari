@@ -17,3 +17,19 @@ included for convienience, but may be out of date. Nxhtml-mode is not
 included because it's rather large, so you should download it here:
 
   http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html
+
+One possible .init file for nxhtml in rinari would be
+
+;;; nxml (rhtml support)
+(load "~/emacs/elisp/nxml/autostart.el")
+
+(setq
+ nxhtml-global-minor-mode t
+ mumamo-chunk-coloring 'submode-colored
+ nxhtml-skip-welcome t
+ indent-region-mode t
+ rng-nxml-auto-validate-flag nil
+ nxml-degraded t
+ )
+
+
