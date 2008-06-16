@@ -54,6 +54,7 @@
 ;;; Code:
 
 (require 'cl)
+(require 'which-func)
 (require 'ruby-mode)
 (require 'inf-ruby)
 (require 'toggle)
@@ -80,9 +81,26 @@
   (interactive)
   (let* ((funname (which-function))
  	 (cls (rails-make-dirname (rails-name-components funname)))
-	 (fn (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
- 	 (appdir (file-name-directory (directory-file-name (file-name-directory (buffer-file-name))))))
+	 (fn (rails-pointing-at-view funname))
+ 	 (appdir (file-name-directory
+		  (directory-file-name
+		   (file-name-directory (buffer-file-name))))))
     (find-file (concat appdir "views/" cls "/" fn ".rhtml"))))
+
+(defun rails-pointing-at-view (funname)
+  "return the path to the related view inside of the app/view/ directory"
+  (interactive)
+  (let ((fn (and (string-match "#\\(.*\\)" funname) (match-string 1 funname))))
+    (save-excursion
+      (if (re-search-backward (format "def[[:space:]]+%s" fn) nil t)
+	  (let ((start (point))
+		view)
+	    (if (ruby-forward-sexp)
+		(if (search-backward "redirect" start t)
+		    ;; at start of the redirect
+		    ;; (insert "++")
+		  )))))
+    fn))
 
 (defun rails-find-action (action &optional controller)
   (interactive)

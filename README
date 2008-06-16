@@ -31,5 +31,3 @@ One possible .init file for nxhtml in rinari would be
  rng-nxml-auto-validate-flag nil
  nxml-degraded t
  )
-
-see http://groups.google.com/group/emacs-on-rails for current discussion

@@ -111,37 +111,37 @@
 	   (get-buffer-process "*server*"))
       (error "server is already running")
     (let* ((default-directory (rails-root))
-	 (default-arguments (format "-e %s" rails-default-environment))
-	 (arguments (split-string
-		     (if arg
-			 (read-from-minibuffer
-			  "arguments to script/server: "
-			  default-arguments)
-		       default-arguments)
-		     " "))
-	 (buffer (apply 'make-comint
-			"server"
-			(concat (rails-root) "/script/server")
-			nil
-			arguments)))
-    (save-excursion
-      (set-buffer buffer)
-      ;; remove ascii coloring tokens
-      (set-process-filter (get-buffer-process buffer)
-			  'rails-script-server-insertion-filter)
-      ;; allow jumping to error messages
-      (set (make-variable-buffer-local 'compilation-error-regexp-alist)
-	   rails-server-compilation-error-regexp-alist)
-      ;; simple kill server (not ideal but \C-c\C-c is taken)
-      (local-set-key "\C-x\C-c" 'comint-interrupt-subjob)
-      ;; kill process when buffer is killed
-      (set (make-variable-buffer-local 'kill-buffer-hook)
-	   (lambda ()
-	     (let ((proc (get-buffer-process (buffer-name))))
-	       (if proc
-		   (kill-process proc)))))
-      (compilation-minor-mode)
-      (message "started script/server %s" (join-string arguments " "))))))
+	   (default-arguments (format "-e %s" rails-default-environment))
+	   (arguments (split-string
+		       (if arg
+			   (read-from-minibuffer
+			    "arguments to script/server: "
+			    default-arguments)
+			 default-arguments)
+		       " "))
+	   (buffer (apply 'make-comint
+			  "server"
+			  (concat (rails-root) "/script/server")
+			  nil
+			  arguments)))
+      (save-excursion
+	(set-buffer buffer)
+	;; remove ascii coloring tokens
+	(set-process-filter (get-buffer-process buffer)
+			    'rails-script-server-insertion-filter)
+	;; allow jumping to error messages
+	(set (make-variable-buffer-local 'compilation-error-regexp-alist)
+	     rails-server-compilation-error-regexp-alist)
+	;; \C-c\C-c kills server
+	(define-key compilation-minor-mode-map (kbd "C-c C-c") 'comint-interrupt-subjob)
+	;; kill process when buffer is killed
+	(set (make-variable-buffer-local 'kill-buffer-hook)
+	     (lambda ()
+	       (let ((proc (get-buffer-process (buffer-name))))
+		 (if proc
+		     (kill-process proc)))))
+	(compilation-minor-mode)
+	(message "started script/server %s" (join-string arguments " "))))))
 
 (defun rails-script-server-insertion-filter (proc string)
   (with-current-buffer (process-buffer proc)

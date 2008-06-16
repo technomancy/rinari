@@ -1,0 +1,139 @@
+# -*- mode: org -*-
+# 
+#+TITLE:     TODO
+#+SEQ_TODO:  TODO MAYBE | WAITING DONE
+#+DRAWERS:   SNIP
+
+=TODO
+List of pending work for rinari
+
+for background see http://groups.google.com/group/emacs-on-rails
+
+* DONE unified runner for rails scripts
+
+This is less a single runner, and more a single function from which
+any rails/script can be executed associating the scripts with
+appropriate buffers and modes.
+
+Currently this
+- runs console from a buffer in comint-mode
+- runs server dumping output to a compilation-minor-mode buffer
+- provides completion for generate/destroy
+- runs all other scripts using shell-command-to-string dumping the
+  output to a message
+
+* WAITING Name functions consistently
+some global prefix for all of the function names, probably either
+"rails" or "rinari"
+
+* TODO Make rinari a minor mode that doesn't activate for regular ruby-mode.
+  :PROPERTIES:
+  :assignee: eschulte
+  :END:
+
+** when to enter rinari-minor-mode
+this could be done through a hook that runs every time a .rb or .rhtml
+file is loaded to check if it is inside of a rails project (using the
+`rails-root' function or a .emacs-project file) and then to load
+rinari-minor-mode appropriately
+
+** add key-bindings for rinari minor mode
+should follow emacs key bindings
+
+see [[info:elisp:Key%20Binding%20Conventions][info:elisp:Key Binding Conventions]]
+
+* WAITING make `rails-find-action' work with rails2-style view filenames
+* TODO make `rails-find-action' which will follow forms (maybe w/prefix?)
+  :PROPERTIES:
+  :assignee:  eschulte
+  :END:
+
+I'm working on this currently, and will hopefully be completed soon
+
+* TODO revert and wrap find-file-in-project
+  :PROPERTIES:
+  :assignee: eschulte
+  :END:
+
+revert to the .emacs-project version of find-file-in-project so that
+the actual find-file-in-project.el file remains unchanged.  Then using
+defadvice wrap the ffip function to find the project base using
+(rails-root) as well as the .emacs-project file.
+
+* MAYBE jump to recent errors in the rails project
+This could be useful for debugging using server logs, test output, or
+even console error messages, but the best implementation is still
+unclear.  See this discussion below from the emacs-on-rails list...
+
+maybe something as simple as looking around in the current buffer for
+the most recent error message, to as complicated to tracking all the
+location of incoming error messages using insertion filters on
+*server* and *console* processes.  Some planning still required
+
+email discussion
+:SNIP:
+> - maybe add a command which can jump to the most recent error (either
+>   in the server logs, or in the console)
+
+>  > That's a great idea. find-file-at-point is pretty good at doing this
+>  > from test failures in eshell, but you have to move your point up to the
+>  > line containing the error message. Leveraging logs and console output
+>  > would be a great addition as would looking for lines somewhere other
+>  > than just under the point.
+>
+> So there are two different possible ways to approach this...
+>
+> 1) through a function which searches in known places (eshell, logs,
+>    consoles, server buffers, in current buffer) and makes an educated
+>    guess about what to present to the user, possibly allowing quick
+>    switching to the other errors.
+
+Hmm... now that I think about it more, I'm not sure it's a good idea to
+make it really convenient to go around digging through server logs to
+find errors. The right way to go about solving that kind of problem is
+to write a test for it. If you make it easier to fix the problem without
+writing a test, really what that amounts to is short-term benefit but
+long-term problems since your fix isn't guaranteed to be caught by the
+test suite.
+
+So I would discourage integration with the dev mongrel logs. The bonus
+side of that is if we only have to help jump to errors/failures in test
+output it becomes a lot easier. There are in my mind three common ways
+of running tests:
+
+- In an emacs shell, whether that's eshell, M-x shell, or ansi-term
+- With compile-mode, as per the ruby-test-file function in rinari
+- In a shell outside Emacs
+
+So if we check console output it will work in the first two cases but
+not in the last. I think it's best to always check the test logs, since
+problems are pretty much guaranteed to be found in there. This also
+solves the integration test problem; when you're running those and you
+get an exception, the only console output you see is that you expected a
+200 response but you got a 500, which is totally useless. In those cases
+you have to check the logs anyway.
+
+We could probably base this functionality on compilation mode. It's
+already built to go over output looking for something that looks like a
+stack trace and provide jumping to the source of the error:
+
+http://www.emacswiki.org/cgi-bin/wiki/CompilationMode
+
+> 2) wrap console, and server processes in insertion-filters which could
+>    notice whenever an error passes through them, and save a pointer to
+>    the error in some global rails-errors variable which could be
+>    queried by jump-to-my-last-error type function
+>
+> I was originally leaning towards the latter, but now that you mention
+> it the former might be easier... not sure
+
+Yeah, the second one sounds a lot harder.
+:END:
+
+* MAYBE add a function for running mysql
+this would use the information in /conf/databases.yaml to log into the
+application's database using sql-* functions from sql.el as
+appropriate
+
+
+
