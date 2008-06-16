@@ -8,7 +8,7 @@
 (require 'ansi-color)
 
 (defvar rails-default-environment
-  "eschulte"
+  "development"
   "the default environment to be used when running rails/scripts")
 
 ;;;###autoload
