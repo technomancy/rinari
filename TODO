@@ -9,7 +9,7 @@ List of pending work for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
-* DONE unified runner for rails scripts
+* unified runner for rails scripts
 
 This is less a single runner, and more a single function from which
 any rails/script can be executed associating the scripts with
@@ -21,6 +21,12 @@ Currently this
 - provides completion for generate/destroy
 - runs all other scripts using shell-command-to-string dumping the
   output to a message
+
+** DONE if web-server doesn't start change status message
+currently there is no indication that the attempt to start the server
+has failed
+
+now has a sentinel, see [[elisp:(describe-function 'set-process-sentinel)]]
 
 * DONE Name functions consistently
 some global prefix for all of the function names, probably either
@@ -35,27 +41,47 @@ rails-script.el (minor)
 
 easy enough
 
-* TODO Make rinari a minor mode that doesn't activate for regular ruby-mode.
+* Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
-  :working-on-currently: true
   :END:
 
-** when to enter rinari-minor-mode
+** DONE define as a minor mode
+** DONE when to enter rinari-minor-mode
 this could be done through a hook that runs every time a .rb or .rhtml
 file is loaded to check if it is inside of a rails project (using the
 `rails-root' function or a .emacs-project file) and then to load
 rinari-minor-mode appropriately
 
-lets see how rails-mode does this...
+done with hooks on find-file and dired-mode
 
-** add key-bindings for rinari minor mode
+** DONE add key-bindings for rinari minor mode
 should follow emacs key bindings
 
 see [[info:elisp:Key%20Binding%20Conventions][info:elisp:Key Binding Conventions]]
 
+:SNIP:
+   * Sequences consisting of `C-c' followed by a control character or a
+     digit are reserved for major modes.
+
+   * Sequences consisting of `C-c' followed by `{', `}', `<', `>', `:'
+     or `;' are also reserved for major modes.
+
+   * Sequences consisting of `C-c' followed by any other punctuation
+     character are allocated for minor modes.  Using them in a major
+     mode is not absolutely prohibited, but if you do that, the major
+     mode binding may be shadowed from time to time by minor modes.
+:END:
+
+given the above, it seems like an ergonomic option would be to start
+all our rinari key-bindings with \C-c-' with \C-c-'-' running
+something similar to \C-c\C-c in org-mode
+
+** TODO key-bindings could probably use improvement
+** TODO good minor mode documentation (like for \C-hm)
+
 * WAITING make `rails-find-action' work with rails2-style view filenames
-* DONE make `rails-find-action' which will follow forms (maybe w/prefix?)
+* make `rails-find-action' which will follow forms (maybe w/prefix?)
   :PROPERTIES:
   :assignee:  eschulte
   :END:
@@ -71,10 +97,12 @@ works for the following cases
 
 can follow multiple redirects
 
-** MAYBE enhancement
+** DONE enhancement
 sometimes an action will have multiple redirect statements, in which
 case this function should ask the user (with completion) which one to
 follow
+
+** TODO better error if run outside of controller
 
 * TODO make rails-find-view follow forms around point
   :PROPERTIES:
@@ -192,3 +220,15 @@ http://www.emacswiki.org/cgi-bin/wiki/CompilationMode
 Yeah, the second one sounds a lot harder.
 :END:
 
+* TODO define macro for ido completion
+since we often want to check the availability of ido for completing
+reads it would probably be worth writing a macro to do this.
+
+also, it may be worthwhile breaking utility functions out into a
+separate file...
+
+
+
+
+* buffer dictionary
+ LocalWords:  rinari

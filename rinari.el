@@ -63,22 +63,6 @@
 (require 'pcmpl-rake)
 (require 'rails-script)
 
-;;; utility
-
-;; XEmacs function which is useful
-(if (not (functionp 'replace-in-string))
-    ;; actually this is dired-replace-in-string slightly modified 
-    (defun replace-in-string (string regexp newtext &optional literal)
-      "Replace REGEXP with NEWTEXT everywhere in STRING and return result.
-      NEWTEXT is taken literally---no \\DIGIT escapes will be recognized."
-      (let ((result "") (start 0) mb me)
-        (while (string-match regexp string start)
-          (setq mb (match-beginning 0)
-                me (match-end 0)
-                result (concat result (substring string start mb) newtext)
-                start me))
-        (concat result (substring string start)))))
-
 ;;;###autoload
 (defun rails-rake (task)
   (interactive (list (completing-read "Rake (default: default): "
@@ -116,9 +100,9 @@ view at which CONTROLLER#FUNCTION points."
 	  (let ((start (point)) render renders view)
 	    (ruby-forward-sexp)
 	    (while (re-search-backward "re\\(?:direct_to\\|nder\\)[^_]" start t)
-	      (setf renders (cons (cons (replace-in-string
-					 (thing-at-point 'line)
-					 "[[:space:]\n\r]" "") (point)) renders)))
+	      (setf renders (cons (cons (replace-regexp-in-string
+					 "[[:space:]\n\r]" ""
+					 (thing-at-point 'line)) (point)) renders)))
 	    (if renders
 		(let ((render (if (equal 1 (length renders))
 				  (caar renders)
@@ -217,29 +201,40 @@ lines starting at point."
   (let ((ffip-project-root (rails-root)))
     ad-do-it))
 
-;; keymaps
-(define-key ruby-mode-map (kbd "C-c C-v") 'rails-find-view)
-(define-key ruby-mode-map (kbd "C-c C-t") 'toggle-buffer)
-(define-key ruby-mode-map (kbd "C-c C-M-t") 'ruby-test-file)
-(define-key ruby-mode-map (kbd "C-c C-S-t") 'ruby-test-one)
+;;--------------------------------------------------------------------
 ;;
-;; some temporary keymaps (will replace when have minor-mode)
+;; minor mode and keymaps
 ;; 
-;; ("Key Binding Conventions" node of the Elisp manual)
-(define-key ruby-mode-map (kbd "C-c v s") 'rails-script)
-(define-key ruby-mode-map (kbd "C-c v w") 'rails-script-server)
-(define-key ruby-mode-map (kbd "C-c v c") 'rails-script-console)
+(defvar rinari-minor-mode-map
+  (let ((map (make-sparse-keymap)))
+    map)
+  "Key map for Rinari minor mode.")
+(define-key rinari-minor-mode-map "\C-c's" 'rails-script)
+(define-key rinari-minor-mode-map "\C-c'c" 'rails-script-console)
+(define-key rinari-minor-mode-map "\C-c'w" 'rails-script-server)
+(define-key rinari-minor-mode-map "\C-c'v" 'rails-find-view)
+(define-key rinari-minor-mode-map "\C-c't" 'toggle-buffer)
 
-;; nxhtml-mode is the cats!
-(eval-after-load 'nxhtml-mode
-  '(progn
-     (define-key nxhtml-mode-map (kbd "C-c C-v") 'rails-find-action)
-     (define-key nxhtml-mode-map (kbd "C-c C-e") 'rails-insert-erb-skeleton)))
+(defun rinari-launch-minor-mode ()
+  "Run `rinari-minor-mode' if inside of a rails projcect"
+  (interactive)
+  (if (rails-root)
+      (rinari-minor-mode)))
 
-;; nxhtml stuff
-(setq mumamo-chunk-coloring 'submode-colored
-      nxhtml-skip-welcome t
-      rng-nxml-auto-validate-flag nil)
+(add-hook 'find-file-hook
+	  (lambda ()
+	    (rinari-launch-minor-mode)))
+
+(add-hook 'dired-mode-hook
+          (lambda ()
+            (rinari-launch-minor-mode)))
+
+(define-minor-mode rinari-minor-mode
+  "Enable Rinari minor mode providing Emacs support for working
+with the Ruby on Rails framework."
+  nil
+  " Rinari"
+  rinari-minor-mode-map)
 
 (provide 'rinari)
 ;;; rinari.el ends here

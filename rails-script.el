@@ -87,6 +87,7 @@
 			arguments)))
     (pop-to-buffer buffer)
     (inferior-ruby-mode)
+    (rinari-minor-mode)
     ;; rails/console regexps
     (make-local-variable 'inferior-ruby-first-prompt-pattern)
     (make-local-variable 'inferior-ruby-prompt-pattern)
@@ -123,38 +124,37 @@
 			  "server"
 			  (concat (rails-root) "/script/server")
 			  nil
-			  arguments)))
+			  arguments))
+	   (proc (get-buffer-process buffer)))
       (save-excursion
 	(set-buffer buffer)
-	;; remove ascii coloring tokens
-	(set-process-filter (get-buffer-process buffer)
-			    'rails-script-server-insertion-filter)
-	;; allow jumping to error messages
+	(set-process-sentinel proc 'rails-script-server-sentinel)
+	(set-process-filter proc 'rails-script-server-insertion-filter)
 	(set (make-variable-buffer-local 'compilation-error-regexp-alist)
 	     rails-server-compilation-error-regexp-alist)
-	;; \C-c\C-c kills server
 	(define-key compilation-minor-mode-map (kbd "C-c C-c") 'comint-interrupt-subjob)
-	;; kill process when buffer is killed
 	(set (make-variable-buffer-local 'kill-buffer-hook)
 	     (lambda ()
-	       (let ((proc (get-buffer-process (buffer-name))))
-		 (if proc
-		     (kill-process proc)))))
+	       (let ((orphan-proc (get-buffer-process (buffer-name))))
+		 (if orphan-proc
+		     (kill-process orphan-proc)))))
 	(compilation-minor-mode)
-	(message "started script/server %s" (join-string arguments " "))))))
+	(rinari-minor-mode)
+	(message "starting script/server %s" (join-string arguments " "))))))
 
 (defun rails-script-server-insertion-filter (proc string)
+  "Insert text to buffer stripping ansi color codes"
   (with-current-buffer (process-buffer proc)
     (let ((moving (= (point) (process-mark proc))))
       (save-excursion
-	;; Insert the text, advancing the process marker.
 	(goto-char (process-mark proc))
-	;; translate ansi color codes
-	;; (insert (ansi-color-apply string))
-	;; ;; remove ansi color codes
 	(insert (ansi-color-filter-apply string))
 	(set-marker (process-mark proc) (point)))
       (if moving (goto-char (process-mark proc))))))
+
+(defun rails-script-server-sentinel (proc msg)
+  "Notify to changes in the server's state"
+  (message "rails/script server - %s" (replace-regexp-in-string "\n" "" msg)))
 
 (provide 'rails-script)
 ;;; rails-script.el ends here
