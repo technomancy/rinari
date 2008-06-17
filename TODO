@@ -75,17 +75,37 @@ the actual find-file-in-project.el file remains unchanged.  Then using
 defadvice wrap the ffip function to find the project base using
 (rails-root) as well as the .emacs-project file.
 
-* MAYBE jump to recent errors in the rails project
-This could be useful for debugging using server logs, test output, or
-even console error messages, but the best implementation is still
-unclear.  See this discussion below from the emacs-on-rails list...
+* MAYBE add a function for running mysql
+this would use the information in /conf/databases.yaml to log into the
+application's database using sql-* functions from sql.el as
+appropriate
 
-maybe something as simple as looking around in the current buffer for
-the most recent error message, to as complicated to tracking all the
-location of incoming error messages using insertion filters on
-*server* and *console* processes.  Some planning still required
+* MAYBE errors / tests
+something to speed up the cycle of
 
-email discussion
+- coding
+- testing
+- jumping to errors
+
+this should probably cash out into two different functions...
+
+** rails-test-method
+
+use `which-function' and the current buffer-file to find the current
+function, then lookup and run the test related to that function
+dumping the output into a compile buffer
+
+** rails-recent error
+
+a function which either...
+1) goes to the error closest to point in the current compilation mode
+   buffer
+2) goes to the most recent error in the *server*, *console*, or *test*
+   buffer
+
+See this discussion below from the emacs-on-rails list...
+
+email discussion:
 :SNIP:
 > - maybe add a command which can jump to the most recent error (either
 >   in the server logs, or in the console)
@@ -144,11 +164,4 @@ http://www.emacswiki.org/cgi-bin/wiki/CompilationMode
 
 Yeah, the second one sounds a lot harder.
 :END:
-
-* MAYBE add a function for running mysql
-this would use the information in /conf/databases.yaml to log into the
-application's database using sql-* functions from sql.el as
-appropriate
-
-
 
