@@ -1,7 +1,7 @@
 # -*- mode: org -*-
 # 
 #+TITLE:     TODO
-#+SEQ_TODO:  TODO MAYBE | WAITING DONE
+#+SEQ_TODO:  TODO MAYBE | DONE WAITING
 #+DRAWERS:   SNIP
 
 =TODO
@@ -43,12 +43,27 @@ should follow emacs key bindings
 see [[info:elisp:Key%20Binding%20Conventions][info:elisp:Key Binding Conventions]]
 
 * WAITING make `rails-find-action' work with rails2-style view filenames
-* TODO make `rails-find-action' which will follow forms (maybe w/prefix?)
+* DONE make `rails-find-action' which will follow forms (maybe w/prefix?)
   :PROPERTIES:
   :assignee:  eschulte
   :END:
 
-I'm working on this currently, and will hopefully be completed soon
+works for the following cases
+- default (goes to the view with the name of the action)
+- follows redirect_to another controller and action
+- follows renders
+
+can follow multiple redirects
+
+** MAYBE enhancement
+sometimes an action will have multiple redirect statements, in which
+case this function should ask the user (with completion) which one to
+follow
+
+* TODO make rails-find-view follow forms the point might be inside
+  :PROPERTIES:
+  :assignee: eschulte
+  :END:
 
 * TODO revert and wrap find-file-in-project
   :PROPERTIES:

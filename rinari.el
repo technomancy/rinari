@@ -80,27 +80,63 @@
   "View toggling for rails"
   (interactive)
   (let* ((funname (which-function))
- 	 (cls (rails-make-dirname (rails-name-components funname)))
-	 (fn (rails-pointing-at-view funname))
+	 (fn (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
+	 (cls (rails-make-dirname (rails-name-components funname)))
+	 (path (rails-pointing-at-view cls fn))
  	 (appdir (file-name-directory
 		  (directory-file-name
 		   (file-name-directory (buffer-file-name))))))
-    (find-file (concat appdir "views/" cls "/" fn ".rhtml"))))
+    (find-file (concat appdir "views/" path ".rhtml"))))
 
-(defun rails-pointing-at-view (funname)
-  "return the path to the related view inside of the app/view/ directory"
+(defun rails-pointing-at-view (controller function)
+  "Takes a CONTROLLER and FUNCTION and returns the path to the
+view at which CONTROLLER#FUNCTION points."
   (interactive)
-  (let ((fn (and (string-match "#\\(.*\\)" funname) (match-string 1 funname))))
+  (let (path)
     (save-excursion
-      (if (re-search-backward (format "def[[:space:]]+%s" fn) nil t)
-	  (let ((start (point))
-		view)
+      (find-file (concat controller "_controller.rb"))
+      (goto-char (point-max))
+      (if (re-search-backward (format "def[[:space:]]+%s" function) nil t)
+	  (let ((start (point)) view)
 	    (if (ruby-forward-sexp)
-		(if (search-backward "redirect" start t)
-		    ;; at start of the redirect
-		    ;; (insert "++")
-		  )))))
-    fn))
+		(if (re-search-backward "re\\(?:direct_to\\|nder\\)[^_]" start t)
+		    (let ((new-function function)
+			  (new-controller controller)
+			  (redirect (rinari-ruby-hash-to-alist)))
+		      (if (assoc ":action" redirect)
+			  (setf new-function (cdr (assoc ":action" redirect))))
+		      (if (assoc ":controller" redirect)
+			  (setf new-controller (cdr (assoc ":controller" redirect))))
+		      (if (and (equalp new-function function)
+			       (equalp new-controller controller))
+			  (error "recursive redirect %s/%s" controller function))
+		      (setf path (rails-pointing-at-view new-controller new-function))))))))
+    (or path (concat controller "/" function))))
+
+(defvar rinari-ruby-hash-regexp
+  "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\']?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
+  ;; "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*\\([^[:space:]]*\\)[[:space:]]*\\)?[,){}$]"
+  "Regexp to match subsequent key => value pairs of a ruby hash.")
+
+(defun rinari-ruby-hash-to-alist ()
+  "Returns an alist of the key => value pairs on consecutive
+lines starting at point."
+  (interactive)
+  (let ((end (save-excursion
+	       (re-search-forward "[^,{(]$" nil t)
+	       (+ 1 (point))))
+	alist)
+    (save-excursion
+      (while (and (< (point) end)
+		  (re-search-forward rinari-ruby-hash-regexp end t))
+	(setf alist
+	      (cons (cons
+		     (match-string 1)
+		     (if (> (length (match-string 3)) 0)
+			 (match-string 3)
+		       "true"))
+		    alist))))
+    alist))
 
 (defun rails-find-action (action &optional controller)
   (interactive)
