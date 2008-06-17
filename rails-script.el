@@ -156,5 +156,5 @@
 	(set-marker (process-mark proc) (point)))
       (if moving (goto-char (process-mark proc))))))
 
-(provide 'rails-scripts)
-;;; rails-scripts.el ends here
+(provide 'rails-script)
+;;; rails-script.el ends here

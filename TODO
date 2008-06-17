@@ -1,7 +1,7 @@
 # -*- mode: org -*-
 # 
 #+TITLE:     TODO
-#+SEQ_TODO:  TODO MAYBE | DONE WAITING
+#+SEQ_TODO:  TODO MAYBE WAITING | DONE
 #+DRAWERS:   SNIP
 
 =TODO
@@ -22,13 +22,23 @@ Currently this
 - runs all other scripts using shell-command-to-string dumping the
   output to a message
 
-* WAITING Name functions consistently
+* DONE Name functions consistently
 some global prefix for all of the function names, probably either
 "rails" or "rinari"
+
+going for rails for now
+- easier to remember
+- easy enough to change later
+
+while I'm doing this I'm going to rename rails-scripts.rl to
+rails-script.el (minor)
+
+easy enough
 
 * TODO Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
+  :working-on-currently: true
   :END:
 
 ** when to enter rinari-minor-mode
@@ -36,6 +46,8 @@ this could be done through a hook that runs every time a .rb or .rhtml
 file is loaded to check if it is inside of a rails project (using the
 `rails-root' function or a .emacs-project file) and then to load
 rinari-minor-mode appropriately
+
+lets see how rails-mode does this...
 
 ** add key-bindings for rinari minor mode
 should follow emacs key bindings
@@ -52,6 +64,10 @@ works for the following cases
 - default (goes to the view with the name of the action)
 - follows redirect_to another controller and action
 - follows renders
+- follows redirects to partials
+- render_partial
+- multiple renders (for example from separate clauses in an if
+  statement)
 
 can follow multiple redirects
 
@@ -60,12 +76,12 @@ sometimes an action will have multiple redirect statements, in which
 case this function should ask the user (with completion) which one to
 follow
 
-* TODO make rails-find-view follow forms the point might be inside
+* TODO make rails-find-view follow forms around point
   :PROPERTIES:
   :assignee: eschulte
   :END:
 
-* TODO revert and wrap find-file-in-project
+* DONE revert and wrap find-file-in-project
   :PROPERTIES:
   :assignee: eschulte
   :END:
@@ -94,6 +110,17 @@ this should probably cash out into two different functions...
 use `which-function' and the current buffer-file to find the current
 function, then lookup and run the test related to that function
 dumping the output into a compile buffer
+
+maybe instead of using the current buffer-file change
+[[file:rinari.el::defun%20rails%20name%20components%20name][rails-name-components-name]] so it returns the last component as well,
+then change the controller usage of this function to drop the last
+list element.  That way this can be used to get model names when
+calling which-function from models/model.rb files.
+
+Also, if you don't have a test written for this particular method this
+could insert the def...end for the test into the appropriate file, and
+drop the point there.  Nothing wrong with a little bit of soft
+paternalism.
 
 ** rails-recent error
 

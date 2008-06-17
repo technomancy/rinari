@@ -64,62 +64,65 @@
 
 ;;; Code:
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; find-file-in-project
+(require 'project-local-variables)
 
-(defvar rinari-project-files-table ())
+(defvar ffip-regexp
+  (concat ".*\\.\\(" (mapconcat (lambda (x) x) '("rb" "rhtml" "el") "\\|") "\\)")
+  "Regexp of things to look for when using find-file-in-project.")
 
-(defvar ffip-subdirectories
-  '("app" "config" "db" "lib" "public/javascripts" "public/stylesheets"))
+(defvar ffip-find-options
+  ""
+  "Extra options to pass to `find' when using find-file-in-project.
 
-(defun populate-project-files-table (file)
-  (if (file-directory-p file)
-      (mapc 'populate-project-files-table (directory-files file t "^[^\.]"))
-    (let* ((file-name (file-name-nondirectory file))
-	   (existing-record (assoc file-name project-files-table))
-	   (unique-parts (get-unique-directory-names file (cdr existing-record))))
-      (if existing-record
-	  (let ((new-key (concat file-name " - " (car unique-parts)))
-		(old-key (concat (car existing-record) " - " (cadr unique-parts))))
-	    (setf (car existing-record) old-key)
-	    (setq project-files-table (acons new-key file project-files-table)))
-	(setq project-files-table (acons file-name file project-files-table))))))
+Use this to exclude portions of your project: \"-not -regex \\\".*vendor.*\\\"\"")
 
-(defun get-unique-directory-names (path1 path2)
-  (let* ((parts1 (and path1 (split-string path1 "/" t)))
-	 (parts2 (and path2 (split-string path2 "/" t)))
-	 (part1 (pop parts1))
-	 (part2 (pop parts2))
-	 (looping t))
-    (while (and part1 part2 looping)
-	   (if (equal part1 part2)
-	       (setq part1 (pop parts1) part2 (pop parts2))
-	     (setq looping nil)))
-    (list part1 part2)))
+(defvar ffip-project-root nil
+  "If non-nil, overrides the project root directory location.")
 
-(defun find-file-in-project (file)
-  (interactive (list (if (or (equalp ido-mode 'file)
-			     (equalp ido-mode 'both))
-			 (ido-completing-read "Find file in project: "
-					      (mapcar 'car (project-files)))
-			 (completing-read "Find file in project: "
-					  (mapcar 'car (project-files))))))
-  (find-file (cdr (assoc file project-files-table))))
+(defun ffip-project-files ()
+  "Return an alist of all filenames in the project and their path.
 
-;; TODO: revert to the .emacs-project version with a defadvice wrapper
-;;       for rails-root
-(defun project-files (&optional file)
-; uncomment these lines if it's too slow to load the whole project-files-table
-;  (when (or (not project-files-table) ; initial load
-;	    (not (string-match (rails-root) (cdar project-files-table)))) ; switched projects
-    (setq project-files-table nil)
-    (if file
-	(populate-project-files-table file)
-      (let ((root (rails-root)))
-	(mapc (lambda (dir)
-		(populate-project-files-table (concat root "/" dir)))
-	      ffip-subdirectories)))
-    project-files-table)
+Files with duplicate filenames are suffixed with the name of the
+directory they are found in so that they are unique."
+  (let ((file-alist nil))
+    (mapcar (lambda (file)
+	      (let ((file-cons (cons (file-name-nondirectory file)
+				     (expand-file-name file))))
+		(when (assoc (car file-cons) file-alist)
+		  (ffip-uniqueify (assoc (car file-cons) file-alist))
+		  (ffip-uniqueify file-cons))
+		(add-to-list 'file-alist file-cons)
+		file-cons))
+	    (split-string (shell-command-to-string (concat "find " (or ffip-project-root
+								       (ffip-project-root))
+							   " -type f -regex \""
+							   ffip-regexp
+							   "\" " ffip-find-options))))))
+
+(defun ffip-uniqueify (file-cons)
+  "Set the car of the argument to include the directory name plus the file name."
+  (setcar file-cons
+	  (concat (car file-cons) ": "
+		  (cadr (reverse (split-string (cdr file-cons) "/"))))))
+
+(defun find-file-in-project ()
+  "Prompt with a completing list of all files in the project to find one.
+
+The project's scope is defined as the first directory containing
+an `.emacs-project' file. You can override this by locally
+setting the `ffip-project-root' variable."
+  (interactive)
+  (let* ((project-files (ffip-project-files))
+	 (file (if (functionp 'ido-completing-read)
+		   (ido-completing-read "Find file in project: "
+					(mapcar 'car project-files))
+		 (completing-read "Find file in project: "
+				  (mapcar 'car project-files)))))
+    (find-file (cdr (assoc file project-files)))))
+
+(defun ffip-project-root (&optional dir)
+  "Find the root of the project defined by presence of `.emacs-project'."
+  (file-name-directory (plv-find-project-file default-directory "")))
 
 (provide 'find-file-in-project)
 ;;; find-file-in-project.el ends here

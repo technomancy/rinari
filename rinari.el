@@ -61,10 +61,26 @@
 
 (require 'find-file-in-project)
 (require 'pcmpl-rake)
-(require 'rails-scripts)
+(require 'rails-script)
+
+;;; utility
+
+;; XEmacs function which is useful
+(if (not (functionp 'replace-in-string))
+    ;; actually this is dired-replace-in-string slightly modified 
+    (defun replace-in-string (string regexp newtext &optional literal)
+      "Replace REGEXP with NEWTEXT everywhere in STRING and return result.
+      NEWTEXT is taken literally---no \\DIGIT escapes will be recognized."
+      (let ((result "") (start 0) mb me)
+        (while (string-match regexp string start)
+          (setq mb (match-beginning 0)
+                me (match-end 0)
+                result (concat result (substring string start mb) newtext)
+                start me))
+        (concat result (substring string start)))))
 
 ;;;###autoload
-(defun rake (task)
+(defun rails-rake (task)
   (interactive (list (completing-read "Rake (default: default): "
 				      (pcmpl-rake-tasks))))
   (shell-command-to-string (concat "rake " (if (= 0 (length task)) "default" task))))
@@ -97,28 +113,39 @@ view at which CONTROLLER#FUNCTION points."
       (find-file (concat controller "_controller.rb"))
       (goto-char (point-max))
       (if (re-search-backward (format "def[[:space:]]+%s" function) nil t)
-	  (let ((start (point)) view)
-	    (if (ruby-forward-sexp)
-		(if (re-search-backward "re\\(?:direct_to\\|nder\\)[^_]" start t)
-		    (let ((new-function function)
-			  (new-controller controller)
-			  (redirect (rinari-ruby-hash-to-alist)))
-		      (if (assoc ":action" redirect)
-			  (setf new-function (cdr (assoc ":action" redirect))))
-		      (if (assoc ":controller" redirect)
-			  (setf new-controller (cdr (assoc ":controller" redirect))))
-		      (if (and (equalp new-function function)
-			       (equalp new-controller controller))
-			  (error "recursive redirect %s/%s" controller function))
-		      (setf path (rails-pointing-at-view new-controller new-function))))))))
+	  (let ((start (point)) render renders view)
+	    (ruby-forward-sexp)
+	    (while (re-search-backward "re\\(?:direct_to\\|nder\\)[^_]" start t)
+	      (setf renders (cons (cons (replace-in-string
+					 (thing-at-point 'line)
+					 "[[:space:]\n\r]" "") (point)) renders)))
+	    (if renders
+		(let ((render (if (equal 1 (length renders))
+				  (caar renders)
+				(completing-read "follow which render: "
+						 (mapcar 'car renders)))))
+		  (goto-char (cdr (assoc render renders)))
+		  (let* ((redirect (rails-ruby-hash-to-alist))
+			 (new-function (or (cdr (assoc ":action" redirect))
+					   (if (assoc ":partial" redirect)
+					       (concat "_" (cdr (assoc ":partial" redirect))))
+					   function))
+			 (new-controller (or (cdr (assoc ":controller" redirect))
+					     controller)))
+		    (if (and (equalp new-function function)
+			     (equalp new-controller controller))
+			(setf path (concat controller "/" function))
+		      (setf path (rails-pointing-at-view new-controller new-function)))))
+	      (if (search-backward "render_partial" start t)
+		  (setf path (concat controller "/" "_" function)))))))
     (or path (concat controller "/" function))))
 
-(defvar rinari-ruby-hash-regexp
+(defvar rails-ruby-hash-regexp
   "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\']?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
   ;; "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*\\([^[:space:]]*\\)[[:space:]]*\\)?[,){}$]"
   "Regexp to match subsequent key => value pairs of a ruby hash.")
 
-(defun rinari-ruby-hash-to-alist ()
+(defun rails-ruby-hash-to-alist ()
   "Returns an alist of the key => value pairs on consecutive
 lines starting at point."
   (interactive)
@@ -128,7 +155,7 @@ lines starting at point."
 	alist)
     (save-excursion
       (while (and (< (point) end)
-		  (re-search-forward rinari-ruby-hash-regexp end t))
+		  (re-search-forward rails-ruby-hash-regexp end t))
 	(setf alist
 	      (cons (cons
 		     (match-string 1)
@@ -183,6 +210,12 @@ lines starting at point."
   (unless no-equals (insert "="))
   (insert "  %>")
   (backward-char 3))
+
+(defadvice find-file-in-project (around find-file-in-rails-project activate)
+  "Wrap `find-file-in-project' to use `rails-root' as the base of
+  the project."
+  (let ((ffip-project-root (rails-root)))
+    ad-do-it))
 
 ;; keymaps
 (define-key ruby-mode-map (kbd "C-c C-v") 'rails-find-view)
