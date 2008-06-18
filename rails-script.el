@@ -12,7 +12,7 @@
   "the default environment to be used when running rails/scripts")
 
 ;;;###autoload
-(defun rails-script (arg)
+(defun rails-script (&optional arg)
   "Run script/*.  Use a prefix argument to edit command line options."
   (interactive "P")
   (let* ((script (expand-file-name
@@ -72,7 +72,7 @@
 	      (format "%s/script/destroy %s %s %s" (rails-root) what which arguments)))))
 
 ;; console
-(defun rails-script-console (arg)
+(defun rails-script-console (&optional arg)
   "Run script/console.  Use a prefix argument to edit command line options."
   (interactive "P")
   (let* ((arguments (list
@@ -97,7 +97,7 @@
 ;; server
 (defvar rails-server-error-regexp
   ;; "\\([^[:space:]]*\\.r[bhtml]+\\):\\([[:digit:]]+\\)"
-  "^[[:space:]]+\\([^[:space:]]*\\):\\([[:digit:]]+\\)"
+  "^[[:space:]]*\\([^[:space:]]*\\):\\([[:digit:]]+\\)"
   "regular expression to match errors in the server logs")
 
 (defvar rails-server-compilation-error-regexp-alist
@@ -105,7 +105,7 @@
   "a version of `compilation-error-regexp-alist' to be used in
   rails logs (should be used with `make-local-variable')")
 
-(defun rails-script-server (arg)
+(defun rails-script-server (&optional arg)
   "Run script/server.  Prefix arg to edit command line options."
   (interactive "P")
   (if (and (get-buffer "*server*")

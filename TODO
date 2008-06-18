@@ -1,47 +1,15 @@
 # -*- mode: org -*-
 # 
 #+TITLE:     TODO
-#+SEQ_TODO:  TODO MAYBE WAITING | DONE
+#+SEQ_TODO:  TODO MAYBE WAITING | PARTIAL DONE
 #+DRAWERS:   SNIP
 
 =TODO
-List of pending work for rinari
+List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
-* unified runner for rails scripts
-
-This is less a single runner, and more a single function from which
-any rails/script can be executed associating the scripts with
-appropriate buffers and modes.
-
-Currently this
-- runs console from a buffer in comint-mode
-- runs server dumping output to a compilation-minor-mode buffer
-- provides completion for generate/destroy
-- runs all other scripts using shell-command-to-string dumping the
-  output to a message
-
-** DONE if web-server doesn't start change status message
-currently there is no indication that the attempt to start the server
-has failed
-
-now has a sentinel, see [[elisp:(describe-function 'set-process-sentinel)]]
-
-* DONE Name functions consistently
-some global prefix for all of the function names, probably either
-"rails" or "rinari"
-
-going for rails for now
-- easier to remember
-- easy enough to change later
-
-while I'm doing this I'm going to rename rails-scripts.rl to
-rails-script.el (minor)
-
-easy enough
-
-* Make rinari a minor mode that doesn't activate for regular ruby-mode.
+* PARTIAL Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
   :END:
@@ -78,58 +46,16 @@ all our rinari key-bindings with \C-c-' with \C-c-'-' running
 something similar to \C-c\C-c in org-mode
 
 ** TODO key-bindings could probably use improvement
-** TODO good minor mode documentation (like for \C-hm)
-
-* WAITING make `rails-find-action' work with rails2-style view filenames
-* make `rails-find-action' which will follow forms (maybe w/prefix?)
-  :PROPERTIES:
-  :assignee:  eschulte
-  :END:
-
-works for the following cases
-- default (goes to the view with the name of the action)
-- follows redirect_to another controller and action
-- follows renders
-- follows redirects to partials
-- render_partial
-- multiple renders (for example from separate clauses in an if
-  statement)
-
-can follow multiple redirects
-
-** DONE enhancement
-sometimes an action will have multiple redirect statements, in which
-case this function should ask the user (with completion) which one to
-follow
-
-** TODO better error if run outside of controller
-
-* TODO make rails-find-view follow forms around point
-  :PROPERTIES:
-  :assignee: eschulte
-  :END:
-
-* DONE revert and wrap find-file-in-project
-  :PROPERTIES:
-  :assignee: eschulte
-  :END:
-
-revert to the .emacs-project version of find-file-in-project so that
-the actual find-file-in-project.el file remains unchanged.  Then using
-defadvice wrap the ffip function to find the project base using
-(rails-root) as well as the .emacs-project file.
-
-* MAYBE add a function for running mysql
-this would use the information in /conf/databases.yaml to log into the
-application's database using sql-* functions from sql.el as
-appropriate
+** TODO good minor mode documentation
+something to indicate functions and keybindings, like \C-hm for major
+modes
 
 * MAYBE errors / tests
 something to speed up the cycle of
 
-- coding
-- testing
-- jumping to errors
+- code
+- test
+- review errors
 
 this should probably cash out into two different functions...
 
@@ -220,6 +146,13 @@ http://www.emacswiki.org/cgi-bin/wiki/CompilationMode
 Yeah, the second one sounds a lot harder.
 :END:
 
+* TODO make rails-find-view follow forms and link_to[_remote]
+
+working on this currently...
+
+* TODO quick wrapper for find file to include *server*, *console*, etc...
+include all of the rails process buffers if they exist
+
 * TODO define macro for ido completion
 since we often want to check the availability of ido for completing
 reads it would probably be worth writing a macro to do this.
@@ -227,8 +160,80 @@ reads it would probably be worth writing a macro to do this.
 also, it may be worthwhile breaking utility functions out into a
 separate file...
 
+* TODO unified rinari-compilation-buffer
+rake test should dump into a compilation buffer.
 
+will probably move rake functions into rails-scripts.el, maybe rename
+rails-run.el or rinari-run.el
 
+ideally we can use the same compilation buffer used for the web server
+logs, just need to look at the compatibility of the
+`compilation-error-regexp'
+* PARTIAL make `rails-find-action' which will follow forms (maybe w/prefix?)
 
-* buffer dictionary
- LocalWords:  rinari
+works for the following cases
+- default (goes to the view with the name of the action)
+- follows redirect_to another controller and action
+- follows renders
+- follows redirects to partials
+- render_partial
+- multiple renders (for example from separate clauses in an if
+  statement)
+
+can follow multiple redirects
+
+** DONE enhancement
+sometimes an action will have multiple redirect statements, in which
+case this function should ask the user (with completion) which one to
+follow
+
+** TODO better error if run outside of controller
+
+* WAITING make `rails-find-action' work with rails2-style view filenames
+
+* MAYBE add a function for running mysql
+this would use the information in /conf/databases.yaml to log into the
+application's database using sql-* functions from sql.el as
+appropriate
+
+* DONE unified runner for rails scripts
+
+This is less a single runner, and more a single function from which
+any rails/script can be executed associating the scripts with
+appropriate buffers and modes.
+
+Currently this
+- runs console from a buffer in comint-mode
+- runs server dumping output to a compilation-minor-mode buffer
+- provides completion for generate/destroy
+- runs all other scripts using shell-command-to-string dumping the
+  output to a message
+
+** DONE if web-server doesn't start change status message
+currently there is no indication that the attempt to start the server
+has failed
+
+now has a sentinel, see [[elisp:(describe-function 'set-process-sentinel)]]
+* DONE revert and wrap find-file-in-project
+  :PROPERTIES:
+  :assignee: eschulte
+  :END:
+
+revert to the .emacs-project version of find-file-in-project so that
+the actual find-file-in-project.el file remains unchanged.  Then using
+defadvice wrap the ffip function to find the project base using
+(rails-root) as well as the .emacs-project file.
+
+* DONE Name functions consistently
+some global prefix for all of the function names, probably either
+"rails" or "rinari"
+
+going for rails for now
+- easier to remember
+- easy enough to change later
+
+while I'm doing this I'm going to rename rails-scripts.rl to
+rails-script.el (minor)
+
+easy enough
+

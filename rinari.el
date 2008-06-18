@@ -80,18 +80,15 @@
   "View toggling for rails"
   (interactive)
   (let* ((funname (which-function))
-	 (fn (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
-	 (cls (rails-make-dirname (rails-name-components funname)))
-	 (path (rails-pointing-at-view cls fn))
- 	 (appdir (file-name-directory
-		  (directory-file-name
-		   (file-name-directory (buffer-file-name))))))
+	 (function (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
+	 (controller (rails-make-dirname (rails-name-components funname)))
+	 (path (rails-path-to-view controller function))
+ 	 (appdir (concat (rails-root) "/app/")))
     (find-file (concat appdir "views/" path ".rhtml"))))
 
-(defun rails-pointing-at-view (controller function)
+(defun rails-path-to-view (controller function)
   "Takes a CONTROLLER and FUNCTION and returns the path to the
 view at which CONTROLLER#FUNCTION points."
-  (interactive)
   (let (path)
     (save-excursion
       (find-file (concat controller "_controller.rb"))
@@ -119,7 +116,7 @@ view at which CONTROLLER#FUNCTION points."
 		    (if (and (equalp new-function function)
 			     (equalp new-controller controller))
 			(setf path (concat controller "/" function))
-		      (setf path (rails-pointing-at-view new-controller new-function)))))
+		      (setf path (rails-path-to-view new-controller new-function)))))
 	      (if (search-backward "render_partial" start t)
 		  (setf path (concat controller "/" "_" function)))))))
     (or path (concat controller "/" function))))
@@ -132,7 +129,6 @@ view at which CONTROLLER#FUNCTION points."
 (defun rails-ruby-hash-to-alist ()
   "Returns an alist of the key => value pairs on consecutive
 lines starting at point."
-  (interactive)
   (let ((end (save-excursion
 	       (re-search-forward "[^,{(]$" nil t)
 	       (+ 1 (point))))
@@ -149,27 +145,30 @@ lines starting at point."
 		    alist))))
     alist))
 
-(defun rails-find-action (action &optional controller)
+(defun rails-alist-from-form ()
+  "If currently inside of a form in a view return an alist of the
+  hash key => values, else return nil."
   (interactive)
-  (if controller
-      (find-file (concat (rails-root "app/controllers/" controller ".rb"))))
-  (beginning-of-buffer)
-  (search-forward-regexp (concat "def\\s" action))
-  (recenter))
-
-(defun rails-controller-name-from-view ()
-  (concat (rails-root) 
-	  "app/controllers/"
-	   (file-name-nondirectory 
-	    (expand-file-name "."))
-	  "_controller.rb"))
+  (save-excursion
+    (if (and (re-search-backward "form_\(?:\(?:remote_\)?tag\)" nil t)
+	   (ruby-forward-sexp))
+      (rails-ruby-hash-to-alist))))
 
 ;;; TODO: make this work with rails2-style view filenames
 (defun rails-find-action ()
   (interactive)
-  (let ((action (file-name-sans-extension (file-name-nondirectory buffer-file-name))))
-    (find-file (rails-controller-name-from-view))
-    (beginning-of-buffer)
+  (let* ((form-alist (rails-alist-from-form))
+	 (action (or (cdr (assoc ":action" form-alist))
+		     (file-name-sans-extension
+		      (file-name-nondirectory buffer-file-name))))
+	 (controller (or (cdr (assoc ":controller" form-alist))
+			 (file-name-nondirectory 
+			  (expand-file-name ".")))))
+    (find-file (concat (rails-root)
+		       "app/controllers/"
+		       controller
+		       "_controller.rb"))
+    (goto-char (point-min))
     (search-forward-regexp (concat "def *" action))
     (recenter)))
 
@@ -213,21 +212,26 @@ lines starting at point."
 (define-key rinari-minor-mode-map "\C-c'c" 'rails-script-console)
 (define-key rinari-minor-mode-map "\C-c'w" 'rails-script-server)
 (define-key rinari-minor-mode-map "\C-c'v" 'rails-find-view)
+(define-key rinari-minor-mode-map "\C-c'a" 'rails-find-action)
 (define-key rinari-minor-mode-map "\C-c't" 'toggle-buffer)
 
-(defun rinari-launch-minor-mode ()
+(defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projcect"
   (interactive)
   (if (rails-root)
-      (rinari-minor-mode)))
+      (rinari-minor-mode t)))
 
 (add-hook 'find-file-hook
 	  (lambda ()
-	    (rinari-launch-minor-mode)))
+	    (rinari-launch)))
 
 (add-hook 'dired-mode-hook
           (lambda ()
-            (rinari-launch-minor-mode)))
+            (rinari-launch)))
+
+(add-hook 'mumamo-after-change-major-mode-hook
+	  (lambda ()
+	    (rinari-launch)))
 
 (define-minor-mode rinari-minor-mode
   "Enable Rinari minor mode providing Emacs support for working
