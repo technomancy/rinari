@@ -7,131 +7,43 @@
 ;;; Code:
 (require 'ansi-color)
 
-(defvar rails-default-environment
-  "development"
-  "the default environment to be used when running rails/scripts")
-
-;;;###autoload
-(defun rails-script (&optional arg)
-  "Run script/*.  Use a prefix argument to edit command line options."
-  (interactive "P")
-  (let* ((script (expand-file-name
-		  (if (or (equalp ido-mode 'file)
-			  (equalp ido-mode 'both))
-		      (ido-read-file-name "script: " (concat (rails-root)
-							     "/script"))
-		    (read-file-name "script: " (concat (rails-root)
-						       "/script")))))
-	 (command (file-name-nondirectory script)))
-    (cond
-      ;; console: start inferior ruby process and jump to the buffer
-      ((string-equal command "console")
-       (rails-script-console arg))
-      ;; server: filter ascii colors and dump to a compilation buffer
-      ((string-equal command "server")
-       (rails-script-server arg))
-      ;; generate
-      ((string-equal command "generate")
-       (rails-script-generate))
-      ;; destroy
-      ((string-equal command "destroy")
-       (rails-script-destroy arg))      
-      ;; all others execute and message the output
-      (t
-       (message "%s"
-		(shell-command-to-string script))))))
-
-;; generate and destroy
-(defvar rails-script-generators
-  '("controller", "integration_test", "mailer", "migration", "model",
-    "observer", "plugin", "resource", "scaffold", "session_migration"))
-
-(defun rails-script-generate ()
-  "Run script/generate"
-  (interactive)
-  (let* ((what (completing-read "generate what: " rails-script-generators))
-	 (arguments
-	  (read-from-minibuffer
-	   (format "arguments to script/generate %s: " what))))
-    (message "%s"
-	     (shell-command-to-string
-	      (format "%s/script/generate %s %s" (rails-root) what arguments)))))
-
-(defun rails-script-destroy (arg)
-  "Run script/destroy"
-  (interactive "P")
-  (let* ((what (completing-read "destroy what: " rails-script-generators))
-	 (which (read-from-minibuffer
-		 (format "destroy which %s: " what)))
-	 (arguments (if arg
-			(read-from-minibuffer
-			 (format "arguments to script/destroy %s %s: " what which))
-		      "")))
-    (message "%s"
-	     (shell-command-to-string
-	      (format "%s/script/destroy %s %s %s" (rails-root) what which arguments)))))
-
 ;; console
 (defun rails-script-console (&optional arg)
   "Run script/console.  Use a prefix argument to edit command line options."
   (interactive "P")
-  (let* ((arguments (list
-		     (if arg
-			 (read-from-minibuffer "arguments to script/console: "
-					       rails-default-environment)
-		       rails-default-environment)))
-	 (buffer (apply 'make-comint
-			"console"
-			(concat (rails-root) "/script/console")
-			nil
-			arguments)))
-    (pop-to-buffer buffer)
-    (inferior-ruby-mode)
-    (rinari-minor-mode)
-    ;; rails/console regexps
-    (make-local-variable 'inferior-ruby-first-prompt-pattern)
-    (make-local-variable 'inferior-ruby-prompt-pattern)
-    (setq inferior-ruby-first-prompt-pattern "^>> "
-	  inferior-ruby-prompt-pattern "^>> ")))
+  (let* ((script (concat (rails-root) "script/console"))
+	 (command (if arg
+		      (read-string "Run Ruby: " (concat script " "))
+		    script)))
+    (run-ruby command)
+    (save-excursion (pop-to-buffer "*ruby*")
+      (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
+      (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> "))))
 
-;; server
-(defvar rails-server-error-regexp
-  ;; "\\([^[:space:]]*\\.r[bhtml]+\\):\\([[:digit:]]+\\)"
-  "^[[:space:]]*\\([^[:space:]]*\\):\\([[:digit:]]+\\)"
-  "regular expression to match errors in the server logs")
+;; compilation
+(defvar rails-compilation-error-regexp
+  "^[[:space:]]*\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)"
+  "regular expression to match errors in ruby process output")
 
-(defvar rails-server-compilation-error-regexp-alist
-  `((,rails-server-error-regexp 1 2))
+(defvar rails-compilation-error-regexp-alist
+  `((,rails-compilation-error-regexp 1 2))
   "a version of `compilation-error-regexp-alist' to be used in
   rails logs (should be used with `make-local-variable')")
 
-(defun rails-script-server (&optional arg)
-  "Run script/server.  Prefix arg to edit command line options."
-  (interactive "P")
-  (if (and (get-buffer "*server*")
-	   (get-buffer-process "*server*"))
-      (error "server is already running")
-    (let* ((default-directory (rails-root))
-	   (default-arguments (format "-e %s" rails-default-environment))
-	   (arguments (split-string
-		       (if arg
-			   (read-from-minibuffer
-			    "arguments to script/server: "
-			    default-arguments)
-			 default-arguments)
-		       " "))
-	   (buffer (apply 'make-comint
-			  "server"
-			  (concat (rails-root) "/script/server")
-			  nil
-			  arguments))
-	   (proc (get-buffer-process buffer)))
-      (save-excursion
+(defun rails-run-w/compilation (cmd)
+  "Run a ruby process dumping output to a ruby compilation buffer."
+  (interactive "FRuby Comand: ")
+  (let ((default-directory (rails-root))
+	(name (file-name-nondirectory cmd))
+	(cmdlist (ruby-args-to-list (expand-file-name cmd))))
+    (unless (comint-check-proc (format "*%s*" name))
+      (let* ((buffer (apply 'make-comint name "ruby" nil cmdlist))
+	     (proc (get-buffer-process buffer)))
 	(set-buffer buffer)
-	(set-process-sentinel proc 'rails-script-server-sentinel)
-	(set-process-filter proc 'rails-script-server-insertion-filter)
+	(set-process-sentinel proc 'rails-compilation-sentinel)
+	(set-process-filter proc 'rails-compilation-insertion-filter)
 	(set (make-variable-buffer-local 'compilation-error-regexp-alist)
-	     rails-server-compilation-error-regexp-alist)
+	     rails-compilation-error-regexp-alist)
 	(define-key compilation-minor-mode-map (kbd "C-c C-c") 'comint-interrupt-subjob)
 	(set (make-variable-buffer-local 'kill-buffer-hook)
 	     (lambda ()
@@ -139,10 +51,10 @@
 		 (if orphan-proc
 		     (kill-process orphan-proc)))))
 	(compilation-minor-mode)
-	(rinari-minor-mode)
-	(message "starting script/server %s" (join-string arguments " "))))))
+	(rinari-minor-mode)))
+    (pop-to-buffer (format "*%s*" name))))
 
-(defun rails-script-server-insertion-filter (proc string)
+(defun rails-compilation-insertion-filter (proc string)
   "Insert text to buffer stripping ansi color codes"
   (with-current-buffer (process-buffer proc)
     (let ((moving (= (point) (process-mark proc))))
@@ -152,9 +64,26 @@
 	(set-marker (process-mark proc) (point)))
       (if moving (goto-char (process-mark proc))))))
 
-(defun rails-script-server-sentinel (proc msg)
-  "Notify to changes in the server's state"
-  (message "rails/script server - %s" (replace-regexp-in-string "\n" "" msg)))
+(defun rails-compilation-sentinel (proc msg)
+  "Notify to changes in process state"
+  (message "%s - %s" proc (replace-regexp-in-string "\n" "" msg)))
+
+(defun rails-compilation-previous-error-group ()
+  "Jump to the start of the previous error group in the current
+compilation buffer."
+  (interactive)
+  (compilation-previous-error 1)
+  (while (string-match rails-compilation-error-regexp (thing-at-point 'line))
+    (forward-line -1))
+  (forward-line 1) (recenter))
+
+(defun rails-compilation-next-error-group ()
+  "Jump to the start of the previous error group in the current
+compilation buffer."
+  (interactive)
+  (while (string-match rails-compilation-error-regexp (thing-at-point 'line))
+    (forward-line 1))
+  (compilation-next-error 1) (recenter))
 
 (provide 'rails-script)
 ;;; rails-script.el ends here

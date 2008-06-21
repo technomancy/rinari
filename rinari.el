@@ -64,10 +64,15 @@
 (require 'rails-script)
 
 ;;;###autoload
-(defun rails-rake (task)
-  (interactive (list (completing-read "Rake (default: default): "
-				      (pcmpl-rake-tasks))))
-  (shell-command-to-string (concat "rake " (if (= 0 (length task)) "default" task))))
+(defun rails-rake (&optional arg)
+  (interactive "P")
+  (let* ((task (completing-read "Rake: "
+				(pcmpl-rake-tasks)))
+	 (rake-args (if arg
+			(read-from-minibuffer "rake "
+					      task)
+		      task)))
+    (message "%s" (shell-command-to-string (concat "rake " rake-args)))))
 
 (defun rails-root (&optional dir)
   (or dir (setq dir default-directory))
@@ -93,19 +98,23 @@ view at which CONTROLLER#FUNCTION points."
     (save-excursion
       (find-file (concat controller "_controller.rb"))
       (goto-char (point-max))
+      ;; if we can find function in this controller
       (if (re-search-backward (format "def[[:space:]]+%s" function) nil t)
 	  (let ((start (point)) render renders view)
 	    (ruby-forward-sexp)
+	    ;; collect all the render/redirects
 	    (while (re-search-backward "re\\(?:direct_to\\|nder\\)[^_]" start t)
 	      (setf renders (cons (cons (replace-regexp-in-string
 					 "[[:space:]\n\r]" ""
 					 (thing-at-point 'line)) (point)) renders)))
 	    (if renders
-		(let ((render (if (equal 1 (length renders))
+		;; if method contains render/redirects select one and follow it
+		(let ((render (if (equal 1 (length renders)) 
 				  (caar renders)
 				(completing-read "follow which render: "
 						 (mapcar 'car renders)))))
 		  (goto-char (cdr (assoc render renders)))
+		  ;; read the hashed arguments to the redirect
 		  (let* ((redirect (rails-ruby-hash-to-alist))
 			 (new-function (or (cdr (assoc ":action" redirect))
 					   (if (assoc ":partial" redirect)
@@ -113,6 +122,8 @@ view at which CONTROLLER#FUNCTION points."
 					   function))
 			 (new-controller (or (cdr (assoc ":controller" redirect))
 					     controller)))
+		    ;; if we are pointed at a new action, check it for
+		    ;; redirects otherwise return a path
 		    (if (and (equalp new-function function)
 			     (equalp new-controller controller))
 			(setf path (concat controller "/" function))
@@ -137,11 +148,10 @@ lines starting at point."
       (while (and (< (point) end)
 		  (re-search-forward rails-ruby-hash-regexp end t))
 	(setf alist
-	      (cons (cons
-		     (match-string 1)
-		     (if (> (length (match-string 3)) 0)
-			 (match-string 3)
-		       "true"))
+	      (cons (cons (match-string 1)
+			  (if (> (length (match-string 3)) 0)
+			      (match-string 3)
+			    "true"))
 		    alist))))
     alist))
 
@@ -188,11 +198,33 @@ lines starting at point."
 
 (defun rails-insert-erb-skeleton (no-equals)
   (interactive "P")
-  (setq no-e no-equals)
   (insert "<%")
   (unless no-equals (insert "="))
   (insert "  %>")
   (backward-char 3))
+
+(defcustom rails-browse-url-func
+  'browse-url
+  "`browse-url' function used by `rails-browse-view'.")
+
+(defun rails-browse-view (arg)
+  "Browse the url of the current view with `rails-browse-url-func'
+which default to `browse-url'.  With a prefix argument allows
+editing of the url."
+  (interactive "P")
+  (let* ((path (buffer-file-name))
+	 (view (if (string-match "app/views/\\(.+\\)\.r[ebhtml]+" path)
+		   (match-string 1 path)))
+	 (port (or () ;; guess port
+		   "3000"))
+	 (server (or () ;; guess server
+		     "localhost"))
+	 (base (concat server ":" port "/" view))
+	 (url (if arg
+		  (read-from-minibuffer "url: "
+					(concat base "/"))
+		base)))
+    (eval (list rails-browse-url-func url))))
 
 (defadvice find-file-in-project (around find-file-in-rails-project activate)
   "Wrap `find-file-in-project' to use `rails-root' as the base of
@@ -208,30 +240,26 @@ lines starting at point."
   (let ((map (make-sparse-keymap)))
     map)
   "Key map for Rinari minor mode.")
+(define-key rinari-minor-mode-map "\C-c'r" 'rails-rake)
 (define-key rinari-minor-mode-map "\C-c's" 'rails-script)
 (define-key rinari-minor-mode-map "\C-c'c" 'rails-script-console)
-(define-key rinari-minor-mode-map "\C-c'w" 'rails-script-server)
+(define-key rinari-minor-mode-map "\C-c'w"
+  (lambda () (interactive) (rails-run-w/compilation
+			    (concat (rails-root) "/script/server"))))
 (define-key rinari-minor-mode-map "\C-c'v" 'rails-find-view)
 (define-key rinari-minor-mode-map "\C-c'a" 'rails-find-action)
+(define-key rinari-minor-mode-map "\C-c'b" 'rails-browse-view)
 (define-key rinari-minor-mode-map "\C-c't" 'toggle-buffer)
 
 (defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projcect"
-  (interactive)
-  (if (rails-root)
-      (rinari-minor-mode t)))
+  (interactive) (if (rails-root) (rinari-minor-mode t)))
 
-(add-hook 'find-file-hook
-	  (lambda ()
-	    (rinari-launch)))
-
-(add-hook 'dired-mode-hook
-          (lambda ()
-            (rinari-launch)))
+(add-hook 'ruby-mode-hook
+	  (lambda () (rinari-launch)))
 
 (add-hook 'mumamo-after-change-major-mode-hook
-	  (lambda ()
-	    (rinari-launch)))
+	  (lambda () (rinari-launch)))
 
 (define-minor-mode rinari-minor-mode
   "Enable Rinari minor mode providing Emacs support for working

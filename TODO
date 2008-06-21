@@ -9,6 +9,8 @@ List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
+* DONE launch web-browser to current view
+  add a quick command to view the current page in a web-browser
 * PARTIAL Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
@@ -50,7 +52,7 @@ something similar to \C-c\C-c in org-mode
 something to indicate functions and keybindings, like \C-hm for major
 modes
 
-* MAYBE errors / tests
+* TODO errors / tests
 something to speed up the cycle of
 
 - code
@@ -78,6 +80,26 @@ paternalism.
 
 ** rails-recent error
 
+Going to re-define some keys in the *server* and *test* compilation
+buffers to make it easier to navigate.
+
+n will go to the next line
+p will go to the previous line
+
+C-n next error line
+C-p previous error line
+
+M-n top of the next group of errors
+M-p top of the previous group of errors [[file:rails-script.el::defun%20rails%20compilation%20previous%20error%20group][previous-group]]
+
+so if you just saw an error on a web page, you can see that error in
+three key commands
+
+1) X-b *server*
+2) M-p
+3) enter
+
+*** old
 a function which either...
 1) goes to the error closest to point in the current compilation mode
    buffer
@@ -160,15 +182,6 @@ reads it would probably be worth writing a macro to do this.
 also, it may be worthwhile breaking utility functions out into a
 separate file...
 
-* TODO unified rinari-compilation-buffer
-rake test should dump into a compilation buffer.
-
-will probably move rake functions into rails-scripts.el, maybe rename
-rails-run.el or rinari-run.el
-
-ideally we can use the same compilation buffer used for the web server
-logs, just need to look at the compatibility of the
-`compilation-error-regexp'
 * PARTIAL make `rails-find-action' which will follow forms (maybe w/prefix?)
 
 works for the following cases
@@ -190,7 +203,6 @@ follow
 ** TODO better error if run outside of controller
 
 * WAITING make `rails-find-action' work with rails2-style view filenames
-
 * MAYBE add a function for running mysql
 this would use the information in /conf/databases.yaml to log into the
 application's database using sql-* functions from sql.el as
