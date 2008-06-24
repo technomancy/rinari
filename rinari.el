@@ -57,11 +57,11 @@
 (require 'which-func)
 (require 'ruby-mode)
 (require 'inf-ruby)
+(require 'ruby-compilation)
 (require 'toggle)
 
 (require 'find-file-in-project)
 (require 'pcmpl-rake)
-(require 'rinari-script)
 
 ;;;###autoload
 (defun rinari-rake (&optional arg)
@@ -81,27 +81,29 @@
     (unless (equal dir "/")
       (rinari-root (expand-file-name (concat dir "../"))))))
 
-(defun rinari-test ()
-  "test the current method"
+(defun rinari-console (&optional arg)
+  "Run script/console.  Use a prefix argument to edit command line options."
+  (interactive "P")
+  (let* ((script (concat (rinari-root) "script/console"))
+	 (command (if arg
+		      (read-string "Run Ruby: " (concat script " "))
+		    script)))
+    (run-ruby command)
+    (save-excursion (pop-to-buffer "*ruby*")
+      (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
+      (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> "))))
+
+(defun rinari-server ()
+  "Run script/server."
   (interactive)
-  (let* ((funname (which-function))
-	 (method (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
-	 ;; rinari-name-components strips _controller from the end
-	 (class (rinari-make-dirname (rinari-name-components funname))))
-    (cond
-     ((string-match "controller" class)
-      (message "controller")
-      (find-file (format "%s/test/functional/%s_test.rb" (rinari-root) class))
-      (goto-char (point-min))
-      (search-forward (format "def %s" method))
-      ))))
+  (ruby-run-w/compilation (concat (rinari-root) "/script/server")))
 
 (defun rinari-find-view ()
   "View toggling for rails"
   (interactive)
   (let* ((funname (which-function))
 	 (function (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
-	 (controller (rinari-make-dirname (rails-name-components funname)))
+	 (controller (rinari-make-dirname (rinari-name-components funname)))
 	 (path (rinari-path-to-view controller function))
  	 (appdir (concat (rinari-root) "/app/")))
     (find-file (concat appdir "views/" path ".rhtml"))))
@@ -247,6 +249,22 @@ editing of the url."
   (let ((ffip-project-root (rinari-root)))
     ad-do-it))
 
+;; ;; TODO: need to figure out how to defadvice with a prefix a
+;; ;; function which doesn't normally have a prefix
+;; (defadvice toggle-buffer (around toggle-buffer-and-run-test first activate)
+;;   "Wrap `toggle-buffer' so that if it is called with a prefix
+;;   argument, and the toggle ends on a testing method, then we run
+;;   the related test, dumping the results into a compilation
+;;   buffer"
+;;   (interactive "P")
+;;   ad-do-it
+;;   (if (ad-get-arg 0)
+;;       (let* ((line (thing-at-point 'line))
+;; 	     (test (and (string-match "def \\(.+\\)" line)
+;; 			(match-string 1 line))))
+;; 	(if (string-match "test" test)
+;; 	    (ruby-run-w/compilation (concat (buffer-file-name) " -n " test))))))
+
 ;;--------------------------------------------------------------------
 ;;
 ;; minor mode and keymaps
@@ -262,11 +280,24 @@ editing of the url."
 (define-key rinari-minor-mode-map "\C-c'v" 'rinari-find-view)
 (define-key rinari-minor-mode-map "\C-c'a" 'rinari-find-action)
 (define-key rinari-minor-mode-map "\C-c'b" 'rinari-browse-view)
+(define-key rinari-minor-mode-map "\C-c'e" 'rinari-insert-erb-skeleton)
 (define-key rinari-minor-mode-map "\C-c't" 'toggle-buffer)
 
 (defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projcect"
-  (interactive) (if (rinari-root) (rinari-minor-mode t)))
+  (interactive)
+  ;; customize toggle.el for rinari
+  (add-to-list
+   'toggle-mapping-styles
+   '(rinari  . (("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
+		("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
+		("app/models/\\1.rb#\\2"      . "test/unit/\\1_test.rb#test_\\2")
+		("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
+		("lib/\\1.rb#\\2"             . "test/unit/test_\\1.rb#test_\\2")
+		("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
+  (setq toggle-mapping-style 'rinari)
+  (setq toggle-mappings (toggle-style toggle-mapping-style))
+  (if (rinari-root) (rinari-minor-mode t)))
 
 (add-hook 'ruby-mode-hook
 	  (lambda () (rinari-launch)))

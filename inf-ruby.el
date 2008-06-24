@@ -143,6 +143,12 @@
 (defvar inferior-ruby-mode-map nil
   "*Mode map for inferior-ruby-mode")
 
+;; TODO:
+;; doesn't match this example
+;; 
+;; SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpected '~', expecting kEND
+;;               similarity = comparison_cache[m][n] ||= clusters[m] ~ clusters[n]
+;;               
 (defconst inferior-ruby-error-regexp-alist
        '(("SyntaxError: compile error\n^\\([^\(].*\\):\\([1-9][0-9]*\\):" 1 2)
 	 ("^\tfrom \\([^\(].*\\):\\([1-9][0-9]*\\)\\(:in `.*'\\)?$" 1 2)))

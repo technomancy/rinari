@@ -1,7 +1,7 @@
 # -*- mode: org -*-
 # 
 #+TITLE:     TODO
-#+SEQ_TODO:  TODO MAYBE WAITING | PARTIAL DONE
+#+SEQ_TODO:  TODO PARTIAL MAYBE WAITING | DONE CANCELLED
 #+DRAWERS:   SNIP
 
 =TODO
@@ -9,8 +9,89 @@ List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
-* DONE launch web-browser to current view
-  add a quick command to view the current page in a web-browser
+* TODO inf-ruby enhancement
+
+found an example of an error that the
+`inferior-ruby-error-regexp-alist' in inf-ruby.el doesn't match
+
+this was the error line
+
+:SNIP:
+SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
+:END:
+
+* TODO errors / tests
+something to speed up the cycle of
+
+- code
+- test
+- review errors
+
+this should probably cash out into two different functions...
+
+** PARTIAL rails-test-method
+
+*** DONE enhance toggle so that it can match up function names as well
+
+*** TODO defadvice toggle so it can run tests
+
+just need to figure out how to add a prefix argument when using
+defadvice ([[file:rinari.el::TODO%20need%20to%20figure%20out%20how%20to%20defadvice%20with%20a%20prefix%20a][defadvice in rinari.el]])
+
+
+*** CANCELLED use the same mechanism as find view
+maybe instead of using the current buffer-file change
+[[file:rinari.el::defun%20rails%20name%20components%20name][rails-name-components-name]] so it returns the last component as well,
+then change the controller usage of this function to drop the last
+list element.  That way this can be used to get model names when
+calling which-function from models/model.rb files.
+
+Also, if you don't have a test written for this particular method this
+could insert the def...end for the test into the appropriate file, and
+drop the point there.  Nothing wrong with a little bit of soft
+paternalism.
+
+* TODO make rails-find-view follow forms and link_to[_remote]
+
+working on this currently...
+
+* TODO make `rails-find-action' work with rails2-style view filenames
+
+* TODO define macro for ido completion
+since we often want to check the availability of ido for completing
+reads it would probably be worth writing a macro to do this.
+
+also, it may be worthwhile breaking utility functions out into a
+separate file...
+* MAYBE add a function for running mysql
+this would use the information in /conf/databases.yaml to log into the
+application's database using sql-* functions from sql.el as
+appropriate
+
+* PARTIAL make `rails-find-action' which will follow forms (maybe w/prefix?)
+
+works for the following cases
+- default (goes to the view with the name of the action)
+- follows redirect_to another controller and action
+- follows renders
+- follows redirects to partials
+- render_partial
+- multiple renders (for example from separate clauses in an if
+  statement)
+
+can follow multiple redirects
+
+** DONE enhancement
+sometimes an action will have multiple redirect statements, in which
+case this function should ask the user (with completion) which one to
+follow
+
+** TODO better error if run outside of controller
+** TODO cleanup
+
+this is current the largest set of functions in rinari.el (it should
+be cleaner / less code)
+
 * PARTIAL Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
@@ -52,36 +133,17 @@ something similar to \C-c\C-c in org-mode
 something to indicate functions and keybindings, like \C-hm for major
 modes
 
-* TODO errors / tests
-something to speed up the cycle of
+* DONE remove rails-script add ruby-compilation
 
-- code
-- test
-- review errors
+it turns out most of the bulk of rails-script.el was supporting
+running ruby processes with output going to compilation buffers.  So
+rails-script.el is now removed (with two short functions in rinari.el
+[[file:rinari.el::defun%20rinari%20console%20optional%20arg][rinari-console]] and [[file:rinari.el::defun%20rinari%20server][rinari-server]]), also ruby-compilation has been
+added.
 
-this should probably cash out into two different functions...
+** PARTIAL move through compilation buffers
 
-** rails-test-method
-
-use `which-function' and the current buffer-file to find the current
-function, then lookup and run the test related to that function
-dumping the output into a compile buffer
-
-maybe instead of using the current buffer-file change
-[[file:rinari.el::defun%20rails%20name%20components%20name][rails-name-components-name]] so it returns the last component as well,
-then change the controller usage of this function to drop the last
-list element.  That way this can be used to get model names when
-calling which-function from models/model.rb files.
-
-Also, if you don't have a test written for this particular method this
-could insert the def...end for the test into the appropriate file, and
-drop the point there.  Nothing wrong with a little bit of soft
-paternalism.
-
-** rails-recent error
-
-Going to re-define some keys in the *server* and *test* compilation
-buffers to make it easier to navigate.
+redefine some keys buffers to make it easier to navigate.
 
 n will go to the next line
 p will go to the previous line
@@ -96,7 +158,7 @@ so if you just saw an error on a web page, you can see that error in
 three key commands
 
 1) X-b *server*
-2) M-p
+p2) M-p
 3) enter
 
 *** old
@@ -168,45 +230,8 @@ http://www.emacswiki.org/cgi-bin/wiki/CompilationMode
 Yeah, the second one sounds a lot harder.
 :END:
 
-* TODO make rails-find-view follow forms and link_to[_remote]
-
-working on this currently...
-
-* TODO quick wrapper for find file to include *server*, *console*, etc...
-include all of the rails process buffers if they exist
-
-* TODO define macro for ido completion
-since we often want to check the availability of ido for completing
-reads it would probably be worth writing a macro to do this.
-
-also, it may be worthwhile breaking utility functions out into a
-separate file...
-
-* PARTIAL make `rails-find-action' which will follow forms (maybe w/prefix?)
-
-works for the following cases
-- default (goes to the view with the name of the action)
-- follows redirect_to another controller and action
-- follows renders
-- follows redirects to partials
-- render_partial
-- multiple renders (for example from separate clauses in an if
-  statement)
-
-can follow multiple redirects
-
-** DONE enhancement
-sometimes an action will have multiple redirect statements, in which
-case this function should ask the user (with completion) which one to
-follow
-
-** TODO better error if run outside of controller
-
-* WAITING make `rails-find-action' work with rails2-style view filenames
-* MAYBE add a function for running mysql
-this would use the information in /conf/databases.yaml to log into the
-application's database using sql-* functions from sql.el as
-appropriate
+* DONE launch web-browser to current view
+  add a quick command to view the current page in a web-browser
 
 * DONE unified runner for rails scripts
 
