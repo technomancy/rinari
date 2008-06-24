@@ -244,6 +244,8 @@ going for rails for now
 - easier to remember
 - easy enough to change later
 
+switching to rinari
+
 while I'm doing this I'm going to rename rails-scripts.rl to
 rails-script.el (minor)
 

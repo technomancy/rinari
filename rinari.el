@@ -47,8 +47,8 @@
 
 ;; Name functions consistently
 ;; Make rinari a minor mode that doesn't activate for regular ruby-mode.
-;; make `rails-find-action' work with rails2-style view filenames
-;; make `rails-find-action' which will follow forms (maybe w/prefix?)
+;; make `rinari-find-action' work with rails2-style view filenames
+;; make `rinari-find-action' which will follow forms (maybe w/prefix?)
 ;; add key-bindings for rinari minor mode
 
 ;;; Code:
@@ -61,10 +61,10 @@
 
 (require 'find-file-in-project)
 (require 'pcmpl-rake)
-(require 'rails-script)
+(require 'rinari-script)
 
 ;;;###autoload
-(defun rails-rake (&optional arg)
+(defun rinari-rake (&optional arg)
   (interactive "P")
   (let* ((task (completing-read "Rake: "
 				(pcmpl-rake-tasks)))
@@ -74,24 +74,39 @@
 		      task)))
     (message "%s" (shell-command-to-string (concat "rake " rake-args)))))
 
-(defun rails-root (&optional dir)
+(defun rinari-root (&optional dir)
   (or dir (setq dir default-directory))
   (if (file-exists-p (concat dir "config/environment.rb"))
       dir
     (unless (equal dir "/")
-      (rails-root (expand-file-name (concat dir "../"))))))
+      (rinari-root (expand-file-name (concat dir "../"))))))
 
-(defun rails-find-view ()
+(defun rinari-test ()
+  "test the current method"
+  (interactive)
+  (let* ((funname (which-function))
+	 (method (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
+	 ;; rinari-name-components strips _controller from the end
+	 (class (rinari-make-dirname (rinari-name-components funname))))
+    (cond
+     ((string-match "controller" class)
+      (message "controller")
+      (find-file (format "%s/test/functional/%s_test.rb" (rinari-root) class))
+      (goto-char (point-min))
+      (search-forward (format "def %s" method))
+      ))))
+
+(defun rinari-find-view ()
   "View toggling for rails"
   (interactive)
   (let* ((funname (which-function))
 	 (function (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
-	 (controller (rails-make-dirname (rails-name-components funname)))
-	 (path (rails-path-to-view controller function))
- 	 (appdir (concat (rails-root) "/app/")))
+	 (controller (rinari-make-dirname (rails-name-components funname)))
+	 (path (rinari-path-to-view controller function))
+ 	 (appdir (concat (rinari-root) "/app/")))
     (find-file (concat appdir "views/" path ".rhtml"))))
 
-(defun rails-path-to-view (controller function)
+(defun rinari-path-to-view (controller function)
   "Takes a CONTROLLER and FUNCTION and returns the path to the
 view at which CONTROLLER#FUNCTION points."
   (let (path)
@@ -115,7 +130,7 @@ view at which CONTROLLER#FUNCTION points."
 						 (mapcar 'car renders)))))
 		  (goto-char (cdr (assoc render renders)))
 		  ;; read the hashed arguments to the redirect
-		  (let* ((redirect (rails-ruby-hash-to-alist))
+		  (let* ((redirect (rinari-ruby-hash-to-alist))
 			 (new-function (or (cdr (assoc ":action" redirect))
 					   (if (assoc ":partial" redirect)
 					       (concat "_" (cdr (assoc ":partial" redirect))))
@@ -127,17 +142,17 @@ view at which CONTROLLER#FUNCTION points."
 		    (if (and (equalp new-function function)
 			     (equalp new-controller controller))
 			(setf path (concat controller "/" function))
-		      (setf path (rails-path-to-view new-controller new-function)))))
+		      (setf path (rinari-path-to-view new-controller new-function)))))
 	      (if (search-backward "render_partial" start t)
 		  (setf path (concat controller "/" "_" function)))))))
     (or path (concat controller "/" function))))
 
-(defvar rails-ruby-hash-regexp
+(defvar rinari-ruby-hash-regexp
   "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\']?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
   ;; "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*\\([^[:space:]]*\\)[[:space:]]*\\)?[,){}$]"
   "Regexp to match subsequent key => value pairs of a ruby hash.")
 
-(defun rails-ruby-hash-to-alist ()
+(defun rinari-ruby-hash-to-alist ()
   "Returns an alist of the key => value pairs on consecutive
 lines starting at point."
   (let ((end (save-excursion
@@ -146,7 +161,7 @@ lines starting at point."
 	alist)
     (save-excursion
       (while (and (< (point) end)
-		  (re-search-forward rails-ruby-hash-regexp end t))
+		  (re-search-forward rinari-ruby-hash-regexp end t))
 	(setf alist
 	      (cons (cons (match-string 1)
 			  (if (> (length (match-string 3)) 0)
@@ -155,26 +170,26 @@ lines starting at point."
 		    alist))))
     alist))
 
-(defun rails-alist-from-form ()
+(defun rinari-alist-from-form ()
   "If currently inside of a form in a view return an alist of the
   hash key => values, else return nil."
   (interactive)
   (save-excursion
     (if (and (re-search-backward "form_\(?:\(?:remote_\)?tag\)" nil t)
-	   (ruby-forward-sexp))
-      (rails-ruby-hash-to-alist))))
+	     (ruby-forward-sexp))
+	(rinari-ruby-hash-to-alist))))
 
 ;;; TODO: make this work with rails2-style view filenames
-(defun rails-find-action ()
+(defun rinari-find-action ()
   (interactive)
-  (let* ((form-alist (rails-alist-from-form))
+  (let* ((form-alist (rinari-alist-from-form))
 	 (action (or (cdr (assoc ":action" form-alist))
 		     (file-name-sans-extension
 		      (file-name-nondirectory buffer-file-name))))
 	 (controller (or (cdr (assoc ":controller" form-alist))
 			 (file-name-nondirectory 
 			  (expand-file-name ".")))))
-    (find-file (concat (rails-root)
+    (find-file (concat (rinari-root)
 		       "app/controllers/"
 		       controller
 		       "_controller.rb"))
@@ -182,33 +197,33 @@ lines starting at point."
     (search-forward-regexp (concat "def *" action))
     (recenter)))
 
-(defun rails-name-components (name)
+(defun rinari-name-components (name)
   "Helper for view toggling"
   (let ((case-fold-search nil))
-	(labels ((rnc (in)
-			(let ((ind (string-match "\\([A-Z][a-z0-9]+\\)[A-Z]" name in)))
-			  (if (eq ind nil)
-			      nil
-			    (cons (downcase (match-string 1 name)) (rnc (match-end 1)))))))
-	  (rnc 0))))
+    (labels ((rnc (in)
+		  (let ((ind (string-match "\\([A-Z][a-z0-9]+\\)[A-Z]" name in)))
+		    (if (eq ind nil)
+			nil
+		      (cons (downcase (match-string 1 name)) (rnc (match-end 1)))))))
+      (rnc 0))))
 
-(defun rails-make-dirname (comps)
+(defun rinari-make-dirname (comps)
   "Helper for view toggling"
   (reduce #'(lambda (str next) (concat str (concat "_" next))) comps))
 
-(defun rails-insert-erb-skeleton (no-equals)
+(defun rinari-insert-erb-skeleton (no-equals)
   (interactive "P")
   (insert "<%")
   (unless no-equals (insert "="))
   (insert "  %>")
   (backward-char 3))
 
-(defcustom rails-browse-url-func
+(defcustom rinari-browse-url-func
   'browse-url
-  "`browse-url' function used by `rails-browse-view'.")
+  "`browse-url' function used by `rinari-browse-view'.")
 
-(defun rails-browse-view (arg)
-  "Browse the url of the current view with `rails-browse-url-func'
+(defun rinari-browse-view (arg)
+  "Browse the url of the current view with `rinari-browse-url-func'
 which default to `browse-url'.  With a prefix argument allows
 editing of the url."
   (interactive "P")
@@ -224,12 +239,12 @@ editing of the url."
 		  (read-from-minibuffer "url: "
 					(concat base "/"))
 		base)))
-    (eval (list rails-browse-url-func url))))
+    (eval (list rinari-browse-url-func url))))
 
-(defadvice find-file-in-project (around find-file-in-rails-project activate)
-  "Wrap `find-file-in-project' to use `rails-root' as the base of
+(defadvice find-file-in-project (around find-file-in-rinari-project activate)
+  "Wrap `find-file-in-project' to use `rinari-root' as the base of
   the project."
-  (let ((ffip-project-root (rails-root)))
+  (let ((ffip-project-root (rinari-root)))
     ad-do-it))
 
 ;;--------------------------------------------------------------------
@@ -240,20 +255,18 @@ editing of the url."
   (let ((map (make-sparse-keymap)))
     map)
   "Key map for Rinari minor mode.")
-(define-key rinari-minor-mode-map "\C-c'r" 'rails-rake)
-(define-key rinari-minor-mode-map "\C-c's" 'rails-script)
-(define-key rinari-minor-mode-map "\C-c'c" 'rails-script-console)
-(define-key rinari-minor-mode-map "\C-c'w"
-  (lambda () (interactive) (rails-run-w/compilation
-			    (concat (rails-root) "/script/server"))))
-(define-key rinari-minor-mode-map "\C-c'v" 'rails-find-view)
-(define-key rinari-minor-mode-map "\C-c'a" 'rails-find-action)
-(define-key rinari-minor-mode-map "\C-c'b" 'rails-browse-view)
+(define-key rinari-minor-mode-map "\C-c'r" 'rinari-rake)
+(define-key rinari-minor-mode-map "\C-c's" 'rinari-script)
+(define-key rinari-minor-mode-map "\C-c'c" 'rinari-console)
+(define-key rinari-minor-mode-map "\C-c'w" 'rinari-server)
+(define-key rinari-minor-mode-map "\C-c'v" 'rinari-find-view)
+(define-key rinari-minor-mode-map "\C-c'a" 'rinari-find-action)
+(define-key rinari-minor-mode-map "\C-c'b" 'rinari-browse-view)
 (define-key rinari-minor-mode-map "\C-c't" 'toggle-buffer)
 
 (defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projcect"
-  (interactive) (if (rails-root) (rinari-minor-mode t)))
+  (interactive) (if (rinari-root) (rinari-minor-mode t)))
 
 (add-hook 'ruby-mode-hook
 	  (lambda () (rinari-launch)))

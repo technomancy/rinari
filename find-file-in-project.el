@@ -102,7 +102,7 @@ directory they are found in so that they are unique."
 (defun ffip-uniqueify (file-cons)
   "Set the car of the argument to include the directory name plus the file name."
   (setcar file-cons
-	  (concat (car file-cons) " - "
+	  (concat (car file-cons) " "
 		  (cadr (reverse (split-string (cdr file-cons) "/"))))))
 
 (defun find-file-in-project ()
