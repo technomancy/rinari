@@ -45,72 +45,57 @@
 
 ;;; Todo:
 
-;; Name functions consistently
-;; Make rinari a minor mode that doesn't activate for regular ruby-mode.
-;; make `rinari-find-action' work with rails2-style view filenames
-;; make `rinari-find-action' which will follow forms (maybe w/prefix?)
-;; add key-bindings for rinari minor mode
+;; see TODO file in this directory
 
 ;;; Code:
-
-(require 'cl)
-(require 'which-func)
 (require 'ruby-mode)
 (require 'inf-ruby)
 (require 'ruby-compilation)
+(require 'cl)
 (require 'toggle)
-
 (require 'find-file-in-project)
-(require 'pcmpl-rake)
 
-;;;###autoload
-(defun rinari-rake (&optional arg)
-  (interactive "P")
-  (let* ((task (completing-read "Rake: "
-				(pcmpl-rake-tasks)))
-	 (rake-args (if arg
-			(read-from-minibuffer "rake "
-					      task)
-		      task)))
-    (message "%s" (shell-command-to-string (concat "rake " rake-args)))))
+(defcustom rinari-browse-url-func
+  'browse-url
+  "`browse-url' function used by `rinari-browse-view'.")
 
-(defun rinari-root (&optional dir)
-  (or dir (setq dir default-directory))
-  (if (file-exists-p (concat dir "config/environment.rb"))
-      dir
-    (unless (equal dir "/")
-      (rinari-root (expand-file-name (concat dir "../"))))))
+(defvar rinari-ruby-hash-regexp
+  "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\']?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
+  "Regexp to match subsequent key => value pairs of a ruby hash.")
 
-(defun rinari-console (&optional arg)
-  "Run script/console.  Use a prefix argument to edit command line options."
-  (interactive "P")
-  (let* ((script (concat (rinari-root) "script/console"))
-	 (command (if arg
-		      (read-string "Run Ruby: " (concat script " "))
-		    script)))
-    (run-ruby command)
-    (save-excursion (pop-to-buffer "*ruby*")
-      (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
-      (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> "))))
+(defun rinari-ruby-hash-to-alist ()
+  "Returns an alist of the key => value pairs on consecutive
+lines starting at point."
+  (let (alist
+	(end (save-excursion
+	       (re-search-forward "[^,{(]$" nil t)
+	       (+ 1 (point)))))
+    (save-excursion
+      (while (and (< (point) end)
+		  (re-search-forward rinari-ruby-hash-regexp end t))
+	(setf alist
+	      (cons (cons (match-string 1)
+			  (if (> (length (match-string 3)) 0)
+			      (match-string 3)
+			    "true"))
+		    alist)))) alist))
 
-(defun rinari-server ()
-  "Run script/server."
+(defun rinari-alist-from-view ()
+  "Return an alist of the options directing to an action from the
+current view.  Taken from forms or links."
   (interactive)
-  (ruby-run-w/compilation (concat (rinari-root) "/script/server")))
-
-(defun rinari-find-view ()
-  "View toggling for rails"
-  (interactive)
-  (let* ((funname (which-function))
-	 (function (and (string-match "#\\(.*\\)" funname) (match-string 1 funname)))
-	 (controller (rinari-make-dirname (rinari-name-components funname)))
-	 (path (rinari-path-to-view controller function))
- 	 (appdir (concat (rinari-root) "/app/")))
-    (find-file (concat appdir "views/" path ".rhtml"))))
+  (save-excursion
+    (let ((form_re (regexp-opt '("form_remote_tag" "form_tag")))
+	  (link_re (regexp-opt '("link_to" "link_to_remote"))))
+      (and (or (re-search-backward form_re nil t) (re-search-forward link_re nil t)
+	       (re-search-backward link_re nil t) (re-search-backward form_re nil t))
+	 (rinari-ruby-hash-to-alist)))))
 
 (defun rinari-path-to-view (controller function)
   "Takes a CONTROLLER and FUNCTION and returns the path to the
 view at which CONTROLLER#FUNCTION points."
+  (unless (and controller function)
+    (error "can't find view without controller and function"))
   (let (path)
     (save-excursion
       (find-file (concat controller "_controller.rb"))
@@ -149,56 +134,6 @@ view at which CONTROLLER#FUNCTION points."
 		  (setf path (concat controller "/" "_" function)))))))
     (or path (concat controller "/" function))))
 
-(defvar rinari-ruby-hash-regexp
-  "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\']?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
-  ;; "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*\\([^[:space:]]*\\)[[:space:]]*\\)?[,){}$]"
-  "Regexp to match subsequent key => value pairs of a ruby hash.")
-
-(defun rinari-ruby-hash-to-alist ()
-  "Returns an alist of the key => value pairs on consecutive
-lines starting at point."
-  (let ((end (save-excursion
-	       (re-search-forward "[^,{(]$" nil t)
-	       (+ 1 (point))))
-	alist)
-    (save-excursion
-      (while (and (< (point) end)
-		  (re-search-forward rinari-ruby-hash-regexp end t))
-	(setf alist
-	      (cons (cons (match-string 1)
-			  (if (> (length (match-string 3)) 0)
-			      (match-string 3)
-			    "true"))
-		    alist))))
-    alist))
-
-(defun rinari-alist-from-form ()
-  "If currently inside of a form in a view return an alist of the
-  hash key => values, else return nil."
-  (interactive)
-  (save-excursion
-    (if (and (re-search-backward "form_\(?:\(?:remote_\)?tag\)" nil t)
-	     (ruby-forward-sexp))
-	(rinari-ruby-hash-to-alist))))
-
-;;; TODO: make this work with rails2-style view filenames
-(defun rinari-find-action ()
-  (interactive)
-  (let* ((form-alist (rinari-alist-from-form))
-	 (action (or (cdr (assoc ":action" form-alist))
-		     (file-name-sans-extension
-		      (file-name-nondirectory buffer-file-name))))
-	 (controller (or (cdr (assoc ":controller" form-alist))
-			 (file-name-nondirectory 
-			  (expand-file-name ".")))))
-    (find-file (concat (rinari-root)
-		       "app/controllers/"
-		       controller
-		       "_controller.rb"))
-    (goto-char (point-min))
-    (search-forward-regexp (concat "def *" action))
-    (recenter)))
-
 (defun rinari-name-components (name)
   "Helper for view toggling"
   (let ((case-fold-search nil))
@@ -213,16 +148,114 @@ lines starting at point."
   "Helper for view toggling"
   (reduce #'(lambda (str next) (concat str (concat "_" next))) comps))
 
+(defadvice find-file-in-project (around find-file-in-rinari-project activate)
+  "Wrap `find-file-in-project' to use `rinari-root' as the base of
+  the project."
+  (let ((ffip-project-root (rinari-root)))
+    ad-do-it))
+
+(defadvice ruby-run-w/compilation (around rinari-run-w/compilation activate)
+  "Set default directory to the root of the rails application
+  before running ruby processes."
+  (let* ((root (rinari-root))
+	 (default-directory (or root
+			       default-directory)))
+    ad-do-it
+    (if root (rinari-minor-mode))))
+
+(defadvice ruby-rake-w/compilation (around rinari-rake-w/compilation activate)
+  "Set default directory to the root of the rails application
+  before running rake processes."
+  (let* ((root (rinari-root))
+	 (default-directory (or root
+			       default-directory)))
+    ad-do-it
+    (if root (rinari-minor-mode))))
+
+;;;###autoload
+(defun rinari-rake (&optional task edit)
+  (interactive "P")
+  (ruby-rake-w/compilation task edit))
+
+(defun rinari-root (&optional dir)
+  (or dir (setq dir default-directory))
+  (if (file-exists-p (concat dir "config/environment.rb"))
+      dir
+    (unless (equal dir "/")
+      (rinari-root (expand-file-name (concat dir "../"))))))
+
+(defun rinari-console (&optional arg)
+  "Run script/console.  Use a prefix argument to edit command line options."
+  (interactive "P")
+  (let* ((script (concat (rinari-root) "script/console"))
+	 (command (if arg
+		      (read-string "Run Ruby: " (concat script " "))
+		    script)))
+    (run-ruby command)
+    (save-excursion (pop-to-buffer "*ruby*")
+      (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
+      (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> ")
+      (rinari-minor-mode))))
+
+(defun rinari-server ()
+  "Run script/server."
+  (interactive)
+  (ruby-run-w/compilation (concat (rinari-root) "/script/server")))
+
+(defun rinari-find-view ()
+  "View toggling for rails"
+  (interactive)
+  (let* ((fn (ruby-add-log-current-method))
+	 (function (and fn (string-match "#\\(.*\\)" fn) (match-string 1 fn)))
+	 (controller (and fn (rinari-make-dirname (rinari-name-components fn))))
+	 (path (rinari-path-to-view controller function))
+ 	 (appdir (concat (rinari-root) "/app/")))
+    (find-file (concat appdir "views/" path ".rhtml"))))
+
+(defun rinari-find-action ()
+  (interactive)
+  (let* ((view-alist (rinari-alist-from-view))
+	 (action (or (cdr (assoc ":action" view-alist))
+		     (file-name-sans-extension
+		      (file-name-nondirectory buffer-file-name))))
+	 (controller (or (cdr (assoc ":controller" view-alist))
+			 (file-name-nondirectory 
+			  (expand-file-name ".")))))
+    (find-file (concat (rinari-root)
+		       "app/controllers/"
+		       controller
+		       "_controller.rb"))
+    (goto-char (point-min))
+    (search-forward-regexp (concat "def *" action))
+    (recenter)))
+
+(defun rinari-test-function (&optional edit-command)
+  "Test the current ruby function.  If current function is not a
+test, then try to jump to the related test using `toggle-buffer'."
+  (interactive "P")
+  (or (string-match "test" (or (ruby-add-log-current-method)
+			       (file-name-nondirectory (buffer-file-name))))
+      (toggle-buffer))
+  (let* ((funname (ruby-add-log-current-method))
+	 (fn (and funname
+		  (string-match "#\\(.*\\)" funname)
+		  (match-string 1 funname)))
+	 (path (buffer-file-name))
+	 (default-command (if fn
+			      (concat path " --name /" fn "/")
+			    path))
+	 (command (if edit-command
+		      (read-string "Run w/Compilation: " default-command)
+		    default-command)))
+    (if path (ruby-run-w/compilation command)
+      (message "no test available"))))
+
 (defun rinari-insert-erb-skeleton (no-equals)
   (interactive "P")
   (insert "<%")
   (unless no-equals (insert "="))
   (insert "  %>")
   (backward-char 3))
-
-(defcustom rinari-browse-url-func
-  'browse-url
-  "`browse-url' function used by `rinari-browse-view'.")
 
 (defun rinari-browse-view (arg)
   "Browse the url of the current view with `rinari-browse-url-func'
@@ -232,9 +265,9 @@ editing of the url."
   (let* ((path (buffer-file-name))
 	 (view (if (string-match "app/views/\\(.+\\)\.r[ebhtml]+" path)
 		   (match-string 1 path)))
-	 (port (or () ;; guess port
+	 (port (or () ;; guess port (or not)
 		   "3000"))
-	 (server (or () ;; guess server
+	 (server (or () ;; guess server (or not)
 		     "localhost"))
 	 (base (concat server ":" port "/" view))
 	 (url (if arg
@@ -242,28 +275,6 @@ editing of the url."
 					(concat base "/"))
 		base)))
     (eval (list rinari-browse-url-func url))))
-
-(defadvice find-file-in-project (around find-file-in-rinari-project activate)
-  "Wrap `find-file-in-project' to use `rinari-root' as the base of
-  the project."
-  (let ((ffip-project-root (rinari-root)))
-    ad-do-it))
-
-;; ;; TODO: need to figure out how to defadvice with a prefix a
-;; ;; function which doesn't normally have a prefix
-;; (defadvice toggle-buffer (around toggle-buffer-and-run-test first activate)
-;;   "Wrap `toggle-buffer' so that if it is called with a prefix
-;;   argument, and the toggle ends on a testing method, then we run
-;;   the related test, dumping the results into a compilation
-;;   buffer"
-;;   (interactive "P")
-;;   ad-do-it
-;;   (if (ad-get-arg 0)
-;;       (let* ((line (thing-at-point 'line))
-;; 	     (test (and (string-match "def \\(.+\\)" line)
-;; 			(match-string 1 line))))
-;; 	(if (string-match "test" test)
-;; 	    (ruby-run-w/compilation (concat (buffer-file-name) " -n " test))))))
 
 ;;--------------------------------------------------------------------
 ;;
@@ -281,7 +292,8 @@ editing of the url."
 (define-key rinari-minor-mode-map "\C-c'a" 'rinari-find-action)
 (define-key rinari-minor-mode-map "\C-c'b" 'rinari-browse-view)
 (define-key rinari-minor-mode-map "\C-c'e" 'rinari-insert-erb-skeleton)
-(define-key rinari-minor-mode-map "\C-c't" 'toggle-buffer)
+(define-key rinari-minor-mode-map "\C-c't" 'rinari-test-function)
+(define-key rinari-minor-mode-map "\C-c'o" 'toggle-buffer)
 
 (defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projcect"

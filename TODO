@@ -20,7 +20,7 @@ this was the error line
 SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
 :END:
 
-* TODO errors / tests
+* DONE errors / tests
 something to speed up the cycle of
 
 - code
@@ -29,15 +29,14 @@ something to speed up the cycle of
 
 this should probably cash out into two different functions...
 
-** PARTIAL rails-test-method
+** DONE rails-test-method
 
 *** DONE enhance toggle so that it can match up function names as well
+see [[file:toggle.el::if%20string%20match%20new%20name][methods in toggle-buffer]]
 
-*** TODO defadvice toggle so it can run tests
+*** DONE rinari-test-function will now try to toggle if needed
 
-just need to figure out how to add a prefix argument when using
-defadvice ([[file:rinari.el::TODO%20need%20to%20figure%20out%20how%20to%20defadvice%20with%20a%20prefix%20a][defadvice in rinari.el]])
-
+see [[file:rinari.el::defun%20rinari%20test%20function][rinari-test-function]]
 
 *** CANCELLED use the same mechanism as find view
 maybe instead of using the current buffer-file change
@@ -51,13 +50,12 @@ could insert the def...end for the test into the appropriate file, and
 drop the point there.  Nothing wrong with a little bit of soft
 paternalism.
 
-* TODO make rails-find-view follow forms and link_to[_remote]
+* DONE make rails-find-action follow forms and link_to[_remote]
 
-working on this currently...
+see [[file:rinari.el::defun%20rinari%20alist%20from%20view][rinari-alist-from-view]]
 
-* TODO make `rails-find-action' work with rails2-style view filenames
-
-* TODO define macro for ido completion
+* TODO make `rails-find-view' work with rails2-style view filenames
+* MAYBE define macro for ido completion
 since we often want to check the availability of ido for completing
 reads it would probably be worth writing a macro to do this.
 
@@ -68,7 +66,7 @@ this would use the information in /conf/databases.yaml to log into the
 application's database using sql-* functions from sql.el as
 appropriate
 
-* PARTIAL make `rails-find-action' which will follow forms (maybe w/prefix?)
+* PARTIAL make `rinari-find-view' which will follow forms (maybe w/prefix?)
 
 works for the following cases
 - default (goes to the view with the name of the action)
@@ -86,11 +84,16 @@ sometimes an action will have multiple redirect statements, in which
 case this function should ask the user (with completion) which one to
 follow
 
-** TODO better error if run outside of controller
-** TODO cleanup
 
-this is current the largest set of functions in rinari.el (it should
-be cleaner / less code)
+** DONE better error if run outside of function
+
+
+
+** MAYBE cleanup
+
+this is current the largest set of functions in rinari.el
+
+(hopefully it can be cleaner / less code)
 
 * PARTIAL Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
@@ -128,11 +131,19 @@ given the above, it seems like an ergonomic option would be to start
 all our rinari key-bindings with \C-c-' with \C-c-'-' running
 something similar to \C-c\C-c in org-mode
 
-** TODO key-bindings could probably use improvement
-** TODO good minor mode documentation
+** MAYBE key-bindings could probably use improvement
+** MAYBE good minor mode documentation
 something to indicate functions and keybindings, like \C-hm for major
 modes
 
+* DONE ruby-compilation enhancement
+  
+found a line which didn't match the error-regexp-alist
+
+:SNIP:
+test_create(QueriesControllerTest) [/home/eschulte/work/arf/arf/test/functional/queries_controller_test.rb:60]:
+:END:
+* DONE rinari-rake uses ruby-compilation
 * DONE remove rails-script add ruby-compilation
 
 it turns out most of the bulk of rails-script.el was supporting
@@ -141,7 +152,7 @@ rails-script.el is now removed (with two short functions in rinari.el
 [[file:rinari.el::defun%20rinari%20console%20optional%20arg][rinari-console]] and [[file:rinari.el::defun%20rinari%20server][rinari-server]]), also ruby-compilation has been
 added.
 
-** PARTIAL move through compilation buffers
+** DONE move through compilation buffers
 
 redefine some keys buffers to make it easier to navigate.
 

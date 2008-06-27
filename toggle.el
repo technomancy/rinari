@@ -146,9 +146,10 @@ match is found, switches to that buffer."
 		  (method (match-string 2 new-name)))
 	      (find-file path)
 	      (goto-char (point-min))
-	      (unless (search-forward (concat "def " method) nil t)
+	      (if (search-forward (concat "def " method) nil t) t
 		(message "%s not defined in %s" method (file-name-nondirectory path))))
 	  (find-file new-name))
       (message (concat "Match not found for " (buffer-file-name))))))
 
 (provide 'toggle)
+;;; toggle.el ends here

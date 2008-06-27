@@ -67,7 +67,10 @@
 (require 'project-local-variables)
 
 (defvar ffip-regexp
-  (concat ".*\\.\\(" (mapconcat (lambda (x) x) '("rb" "rhtml" "el") "\\|") "\\)")
+  (concat ".*\\.\\("
+	  (mapconcat (lambda (x) x)
+		     '("rb" "yml" "yaml" "rhtml" "el") "\\|")
+	  "\\)")
   "Regexp of things to look for when using find-file-in-project.")
 
 (defvar ffip-find-options
