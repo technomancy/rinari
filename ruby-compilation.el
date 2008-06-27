@@ -22,13 +22,16 @@
 	(cmdlist (cons "ruby" (ruby-args-to-list (expand-file-name cmd)))))
     (pop-to-buffer (ruby-do-run-w/compilation name cmdlist))))
 
-(defun ruby-rake-w/compilation (&optional task edit)
+(defun ruby-rake-w/compilation (&optional edit task)
   "Run a rake process dumping output to a ruby compilation buffer."
   (interactive "P")
-  (let* ((task (or task (completing-read "Rake: " (pcmpl-rake-tasks))))
-	 (rake-args (if edit (read-from-minibuffer "rake " task) task)))
+  (let* ((task (or task (if (stringp edit) edit)
+		   (completing-read "Rake: " (pcmpl-rake-tasks))))
+	 (rake-args (if (and edit (not (stringp edit)))
+			(read-from-minibuffer "Edit Rake Command: " (concat task " "))
+		      task)))
     (pop-to-buffer (ruby-do-run-w/compilation
-		    "rake" (cons "/usr/local/bin/rake"
+		    "rake" (cons "rake"
 				 (ruby-args-to-list rake-args))))))
 
 (defun ruby-do-run-w/compilation (name cmdlist)
