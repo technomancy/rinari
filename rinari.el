@@ -157,20 +157,16 @@ view at which CONTROLLER#FUNCTION points."
 (defadvice ruby-run-w/compilation (around rinari-run-w/compilation activate)
   "Set default directory to the root of the rails application
   before running ruby processes."
-  (let* ((root (rinari-root))
-	 (default-directory (or root
-			       default-directory)))
+  (let ((default-directory (or (rinari-root) default-directory)))
     ad-do-it
-    (if root (rinari-minor-mode))))
+    (rinari-launch)))
 
 (defadvice ruby-rake-w/compilation (around rinari-rake-w/compilation activate)
   "Set default directory to the root of the rails application
   before running rake processes."
-  (let* ((root (rinari-root))
-	 (default-directory (or root
-			       default-directory)))
+  (let ((default-directory (or (rinari-root) default-directory)))
     ad-do-it
-    (if root (rinari-minor-mode))))
+    (rinari-launch)))
 
 ;;;###autoload
 (defun rinari-rake (&optional task edit)
@@ -195,7 +191,7 @@ view at which CONTROLLER#FUNCTION points."
     (save-excursion (pop-to-buffer "*ruby*")
       (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
       (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> ")
-      (rinari-minor-mode))))
+      (rinari-launch))))
 
 (defun rinari-server ()
   "Run script/server."
@@ -276,6 +272,19 @@ editing of the url."
 		base)))
     (eval (list rinari-browse-url-func url))))
 
+(defun rinari-run-what (&optional arg)
+  "Allows the user to run a function selected from amongst all of
+the rinari functions displaying their names and keybindings."
+  (interactive "P")
+  (let* ((rinari-commands (mapcar (lambda (el)
+				    (format "%s (\\C-c'%s)"
+					    (caddr el) (car el)))
+				  rinari-minor-mode-keybindings))
+	 (rinari-command (car (split-string
+			       (completing-read "run rinari function: "
+						rinari-commands)))))
+    (call-interactively (intern rinari-command))))
+
 ;;--------------------------------------------------------------------
 ;;
 ;; minor mode and keymaps
@@ -284,19 +293,21 @@ editing of the url."
   (let ((map (make-sparse-keymap)))
     map)
   "Key map for Rinari minor mode.")
-(define-key rinari-minor-mode-map "\C-c'r" 'rinari-rake)
-(define-key rinari-minor-mode-map "\C-c's" 'rinari-script)
-(define-key rinari-minor-mode-map "\C-c'c" 'rinari-console)
-(define-key rinari-minor-mode-map "\C-c'w" 'rinari-server)
-(define-key rinari-minor-mode-map "\C-c'v" 'rinari-find-view)
-(define-key rinari-minor-mode-map "\C-c'a" 'rinari-find-action)
-(define-key rinari-minor-mode-map "\C-c'b" 'rinari-browse-view)
-(define-key rinari-minor-mode-map "\C-c'e" 'rinari-insert-erb-skeleton)
-(define-key rinari-minor-mode-map "\C-c't" 'rinari-test-function)
-(define-key rinari-minor-mode-map "\C-c'o" 'toggle-buffer)
+
+(defvar rinari-minor-mode-keybindings
+  '(("\t" . 'rinari-run-what) ("o" . 'toggle-buffer)
+    ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test-function)
+    ("r" . 'rinari-rake) ("c" . 'rinari-console) ("b" . 'rinari-browse-view)
+    ("v" . 'rinari-find-view) ("a" . 'rinari-find-action) ("w" . 'rinari-server))
+  "alist mapping of keys to functions in `rinari-minor-mode'")
+
+(mapcar (lambda (el)
+	  (eval `(define-key rinari-minor-mode-map ,(format "\C-c'%s" (car el)) ,(cdr el))))
+	rinari-minor-mode-keybindings)
 
 (defun rinari-launch ()
-  "Run `rinari-minor-mode' if inside of a rails projcect"
+  "Run `rinari-minor-mode' if inside of a rails projcect,
+otherwise turn `rinari-minor-mode' off if it is on."
   (interactive)
   ;; customize toggle.el for rinari
   (add-to-list
@@ -309,13 +320,23 @@ editing of the url."
 		("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
   (setq toggle-mapping-style 'rinari)
   (setq toggle-mappings (toggle-style toggle-mapping-style))
-  (if (rinari-root) (rinari-minor-mode t)))
+  (if (rinari-root)
+      (unless rinari-minor-mode (rinari-minor-mode t))
+      (if rinari-minor-mode (rinari-minor-mode))))
 
 (add-hook 'ruby-mode-hook
 	  (lambda () (rinari-launch)))
 
 (add-hook 'mumamo-after-change-major-mode-hook
 	  (lambda () (rinari-launch)))
+
+(add-hook 'dired-mode-hook
+	  (lambda () (rinari-launch)))
+
+(defadvice cd (after rinari-on-cd activate)
+  "Active/Deactive rinari-minor-node when changing into and out
+  of raills project directories"
+  (rinari-launch))
 
 (define-minor-mode rinari-minor-mode
   "Enable Rinari minor mode providing Emacs support for working

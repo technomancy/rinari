@@ -132,10 +132,10 @@ matches, it returns nil"
 Matches the current buffer against rules in toggle-mappings. If a
 match is found, switches to that buffer."
   (interactive)
-  (let* ((function (which-function))
+  (let* ((function (ruby-add-log-current-method))
 	 (func-add (if function
-		       (concat "#" (and (string-match "#\\(.+\\)" (which-function))
-					(match-string 1 (which-function))))
+		       (concat "#" (and (string-match "#\\(.+\\)" (ruby-add-log-current-method))
+					(match-string 1 (ruby-add-log-current-method))))
 		     ""))
 	 (new-name (or (toggle-filename (concat (buffer-file-name) func-add)
 					toggle-mappings)

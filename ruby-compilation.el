@@ -57,8 +57,8 @@
 	  (local-set-key "p"    'previous-error-no-select)
 	  (local-set-key "n"    'next-error-no-select)
 	  (local-set-key "\M-p" 'ruby-compilation-previous-error-group)
-	  (local-set-key "\M-n" 'ruby-compilation-next-error-group))
-	buffer))))
+	  (local-set-key "\M-n" 'ruby-compilation-next-error-group))))
+    comp-buffer-name))
 
 (defun ruby-compilation-insertion-filter (proc string)
   "Insert text to buffer stripping ansi color codes"
