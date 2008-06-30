@@ -25,11 +25,11 @@
 ;; compilation buffer.  Useful for executing tests, or rake tasks
 ;; where the ability to jump to errors in source code is desirable.
 ;;
-;; The functions you will probably want to use are...
+;; The functions you will probably want to use are
 ;; 
 ;; ruby-run-w/compilation
 ;; ruby-rake-w/compilation
-;; 
+;;
 
 ;;; Code:
 (require 'ansi-color)
@@ -69,24 +69,19 @@
       (if (get-buffer comp-buffer-name) (kill-buffer comp-buffer-name))
       (let* ((buffer (apply 'make-comint name (car cmdlist) nil (cdr cmdlist)))
 	     (proc (get-buffer-process buffer)))
-	(save-excursion ;; set buffer local variables
-	  (set-buffer buffer)
+	(save-excursion
+	  (set-buffer buffer) ;; set buffer local variables and process ornaments
 	  (set-process-sentinel proc 'ruby-compilation-sentinel)
 	  (set-process-filter proc 'ruby-compilation-insertion-filter)
-	  (set (make-variable-buffer-local 'compilation-error-regexp-alist)
+	  (set (make-local-variable 'compilation-error-regexp-alist)
 	       ruby-compilation-error-regexp-alist)
-	  (define-key compilation-minor-mode-map (kbd "C-c C-c") 'comint-interrupt-subjob)
-	  (set (make-variable-buffer-local 'kill-buffer-hook)
+	  (set (make-local-variable 'kill-buffer-hook)
 	       (lambda ()
 		 (let ((orphan-proc (get-buffer-process (buffer-name))))
 		   (if orphan-proc
 		       (kill-process orphan-proc)))))
 	  (compilation-minor-mode)
-	  ;; bind keys (maybe should be implemented as a ruby-compilation minor mode)
-	  (local-set-key "p"    'previous-error-no-select)
-	  (local-set-key "n"    'next-error-no-select)
-	  (local-set-key "\M-p" 'ruby-compilation-previous-error-group)
-	  (local-set-key "\M-n" 'ruby-compilation-next-error-group))))
+	  (ruby-compilation-minor-mode))))
     comp-buffer-name))
 
 (defun ruby-compilation-insertion-filter (proc string)
@@ -119,6 +114,25 @@ compilation buffer."
   (while (string-match ruby-compilation-error-regexp (thing-at-point 'line))
     (forward-line 1))
   (compilation-next-error 1) (recenter))
+
+;; minor mode
+(defvar ruby-compilation-minor-mode-map
+  (let ((map (make-sparse-keymap)))
+    map)
+  "Key map for Ruby Compilation minor mode.")
+
+(define-key ruby-compilation-minor-mode-map "p"    'previous-error-no-select)
+(define-key ruby-compilation-minor-mode-map "n"    'next-error-no-select)
+(define-key ruby-compilation-minor-mode-map "\M-p" 'ruby-compilation-previous-error-group)
+(define-key ruby-compilation-minor-mode-map "\M-n" 'ruby-compilation-next-error-group)
+(define-key ruby-compilation-minor-mode-map (kbd "C-c C-c") 'comint-interrupt-subjob)
+
+(define-minor-mode ruby-compilation-minor-mode
+  "Enable Ruby Compilation minor mode providing some key-bindings
+  for navigating ruby compilation buffers."
+  nil
+  " Ruby:Comp"
+  ruby-compilation-minor-mode-map)
 
 (provide 'ruby-compilation)
 ;;; ruby-compilation.el ends here

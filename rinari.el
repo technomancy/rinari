@@ -272,6 +272,38 @@ editing of the url."
 		base)))
     (eval (list rinari-browse-url-func url))))
 
+(defun rinari-parse-yaml ()
+  (let ((start (point))
+	(end (save-excursion (re-search-forward "^$" nil t) (point)))
+	alist)
+    (while (and (< (point) end)
+		(re-search-forward "^ *\\(.*\\): \\(.*\\)$" nil t))
+      (setf alist (cons (cons (match-string 1) (match-string 2)) alist)))
+    alist))
+
+(defun rinari-sql ()
+  "Browse the application's database."
+  (interactive)
+  (let* ((environment (or (getenv "RAILS_ENV") "development"))
+	 (database-alist (save-excursion
+			   (with-temp-buffer
+			     (insert-file (concat (rinari-root)
+					      "/config/database.yml"))
+			     (goto-char (point-min))
+			     (re-search-forward (concat "^" environment ":"))
+			     (rinari-parse-yaml))))
+	 (adapter (or (cdr (assoc "adapter" database-alist)) "sqlite"))
+	 (sql-user (or (cdr (assoc "username" database-alist)) "root"))
+	 (sql-password (or (cdr (assoc "password" database-alist)) ""))
+	 (sql-database (or (cdr (assoc "database" database-alist))
+			   (concat (file-name-nondirectory (rinari-root))
+				   "_" environment)))
+	 (server (or (cdr (assoc "host" database-alist)) "localhost"))
+	 (port (cdr (assoc "port" database-alist)))
+	 (sql-server (if port (concat server ":" port) server)))
+    (if (string-match "sqlite" adapter) (setf adapter "sqlite"))
+    (eval (list (intern (concat "sql-" adapter)))) (rinari-launch)))
+
 (defun rinari-run-what (&optional arg)
   "Allows the user to run a function selected from amongst all of
 the rinari functions displaying their names and keybindings."
@@ -295,7 +327,7 @@ the rinari functions displaying their names and keybindings."
   "Key map for Rinari minor mode.")
 
 (defvar rinari-minor-mode-keybindings
-  '(("\t" . 'rinari-run-what) ("o" . 'toggle-buffer)
+  '(("\t" . 'rinari-run-what) ("o" . 'toggle-buffer) ("s" . 'rinari-sql)
     ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test-function)
     ("r" . 'rinari-rake) ("c" . 'rinari-console) ("b" . 'rinari-browse-view)
     ("v" . 'rinari-find-view) ("a" . 'rinari-find-action) ("w" . 'rinari-server))
@@ -327,6 +359,9 @@ otherwise turn `rinari-minor-mode' off if it is on."
 (add-hook 'ruby-mode-hook
 	  (lambda () (rinari-launch)))
 
+(add-hook 'yaml-mode-hook
+	  (lambda () (rinari-launch)))
+
 (add-hook 'mumamo-after-change-major-mode-hook
 	  (lambda () (rinari-launch)))
 
@@ -335,7 +370,7 @@ otherwise turn `rinari-minor-mode' off if it is on."
 
 (defadvice cd (after rinari-on-cd activate)
   "Active/Deactive rinari-minor-node when changing into and out
-  of raills project directories"
+  of raills project directories."
   (rinari-launch))
 
 (define-minor-mode rinari-minor-mode
