@@ -134,8 +134,8 @@ match is found, switches to that buffer."
   (interactive)
   (let* ((function (ruby-add-log-current-method))
 	 (func-add (if function
-		       (concat "#" (and (string-match "#\\(.+\\)" (ruby-add-log-current-method))
-					(match-string 1 (ruby-add-log-current-method))))
+		       (concat "#" (and (string-match "#\\(.+\\)" function)
+					(match-string 1 function)))
 		     ""))
 	 (new-name (or (toggle-filename (concat (buffer-file-name) func-add)
 					toggle-mappings)

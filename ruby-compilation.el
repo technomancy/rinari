@@ -1,6 +1,35 @@
 ;;; ruby-compilation.el --- run a ruby process in a compilation buffer
 
-;; Eric Schulte
+;; Copyright (C) 2008 Eric Schulte
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;; Allow for execution of ruby processes dumping the results into a
+;; compilation buffer.  Useful for executing tests, or rake tasks
+;; where the ability to jump to errors in source code is desirable.
+;;
+;; The functions you will probably want to use are...
+;; 
+;; ruby-run-w/compilation
+;; ruby-rake-w/compilation
+;; 
 
 ;;; Code:
 (require 'ansi-color)
