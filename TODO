@@ -4,7 +4,6 @@
 #+SEQ_TODO:  TODO PARTIAL MAYBE WAITING | DONE CANCELLED
 #+DRAWERS:   SNIP
 
-=TODO
 List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
@@ -20,53 +19,7 @@ this was the error line
 SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
 :END:
 
-* DONE errors / tests
-something to speed up the cycle of
-
-- code
-- test
-- review errors
-
-this should probably cash out into two different functions...
-
-** DONE rails-test-method
-
-*** DONE enhance toggle so that it can match up function names as well
-see [[file:toggle.el::if%20string%20match%20new%20name][methods in toggle-buffer]]
-
-*** DONE rinari-test-function will now try to toggle if needed
-
-see [[file:rinari.el::defun%20rinari%20test%20function][rinari-test-function]]
-
-*** CANCELLED use the same mechanism as find view
-maybe instead of using the current buffer-file change
-[[file:rinari.el::defun%20rails%20name%20components%20name][rails-name-components-name]] so it returns the last component as well,
-then change the controller usage of this function to drop the last
-list element.  That way this can be used to get model names when
-calling which-function from models/model.rb files.
-
-Also, if you don't have a test written for this particular method this
-could insert the def...end for the test into the appropriate file, and
-drop the point there.  Nothing wrong with a little bit of soft
-paternalism.
-
-* DONE make rails-find-action follow forms and link_to[_remote]
-
-see [[file:rinari.el::defun%20rinari%20alist%20from%20view][rinari-alist-from-view]]
-
-* TODO make `rails-find-view' work with rails2-style view filenames
-* MAYBE define macro for ido completion
-since we often want to check the availability of ido for completing
-reads it would probably be worth writing a macro to do this.
-
-also, it may be worthwhile breaking utility functions out into a
-separate file...
-* MAYBE add a function for running mysql
-this would use the information in /conf/databases.yaml to log into the
-application's database using sql-* functions from sql.el as
-appropriate
-
-* PARTIAL make `rinari-find-view' which will follow forms (maybe w/prefix?)
+* TODO make `rinari-find-view' which will follow forms (maybe w/prefix?)
 
 works for the following cases
 - default (goes to the view with the name of the action)
@@ -89,16 +42,28 @@ follow
 
 
 
+** TODO work with rails2-style view filenames
+
+
 ** MAYBE cleanup
 
 this is current the largest set of functions in rinari.el
 
 (hopefully it can be cleaner / less code)
 
-* PARTIAL Make rinari a minor mode that doesn't activate for regular ruby-mode.
+* MAYBE define macro for ido completion
+since we often want to check the availability of ido for completing
+reads it would probably be worth writing a macro to do this.
+
+also, it may be worthwhile breaking utility functions out into a
+separate file...
+
+* MAYBE Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
   :END:
+
+look at [[info:elisp:Minor%20Mode%20Conventions][info:elisp:Minor Mode Conventions]]
 
 ** DONE define as a minor mode
 ** DONE when to enter rinari-minor-mode
@@ -135,6 +100,50 @@ something similar to \C-c\C-c in org-mode
 ** MAYBE good minor mode documentation
 something to indicate functions and keybindings, like \C-hm for major
 modes
+
+* MAYBE Make rinari-browse-view smarter
+
+So it
+1) goes to the right place when called from a partial
+2) and brings up a url in minibuffer if an id is needed
+
+* DONE errors / tests
+something to speed up the cycle of
+
+- code
+- test
+- review errors
+
+this should probably cash out into two different functions...
+
+** DONE rails-test-method
+
+*** DONE enhance toggle so that it can match up function names as well
+see [[file:toggle.el::if%20string%20match%20new%20name][methods in toggle-buffer]]
+
+*** DONE rinari-test-function will now try to toggle if needed
+
+see [[file:rinari.el::defun%20rinari%20test%20function][rinari-test-function]]
+
+*** CANCELLED use the same mechanism as find view
+maybe instead of using the current buffer-file change
+[[file:rinari.el::defun%20rails%20name%20components%20name][rails-name-components-name]] so it returns the last component as well,
+then change the controller usage of this function to drop the last
+list element.  That way this can be used to get model names when
+calling which-function from models/model.rb files.
+
+Also, if you don't have a test written for this particular method this
+could insert the def...end for the test into the appropriate file, and
+drop the point there.  Nothing wrong with a little bit of soft
+paternalism.
+* DONE add a function for running mysql
+this would use the information in /conf/databases.yaml to log into the
+application's database using sql-* functions from sql.el as
+appropriate
+
+* DONE make rails-find-action follow forms and link_to[_remote]
+
+see [[file:rinari.el::defun%20rinari%20alist%20from%20view][rinari-alist-from-view]]
 
 * DONE ruby-compilation enhancement
   
