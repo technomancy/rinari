@@ -62,6 +62,12 @@
 
 (require 'cl)
 
+(defcustom toggle-which-function-command
+  'which-function
+  "Function used to determine the current function.  Defaults to
+`which-function', but others may be preferable, for example
+`ruby-add-log-current-method' is more reliable in ruby code.")
+
 (defcustom toggle-mapping-styles
   '((zentest . (("app/controllers/\\1.rb"     . "test/controllers/\\1_test.rb")
                 ("app/views/\\1.rb"           . "test/views/\\1_test.rb")
@@ -132,7 +138,7 @@ matches, it returns nil"
 Matches the current buffer against rules in toggle-mappings. If a
 match is found, switches to that buffer."
   (interactive)
-  (let* ((function (ruby-add-log-current-method))
+  (let* ((function (eval (list toggle-which-function-command)))
 	 (func-add (if function
 		       (concat "#" (and (string-match "#\\(.+\\)" function)
 					(match-string 1 function)))

@@ -352,6 +352,7 @@ otherwise turn `rinari-minor-mode' off if it is on."
 		("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
   (setq toggle-mapping-style 'rinari)
   (setq toggle-mappings (toggle-style toggle-mapping-style))
+  (setq toggle-which-function-command 'ruby-add-log-current-method)
   (if (rinari-root)
       (unless rinari-minor-mode (rinari-minor-mode t))
       (if rinari-minor-mode (rinari-minor-mode))))
