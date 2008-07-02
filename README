@@ -12,7 +12,7 @@ your .emacs file:
 
   (add-to-list 'load-path "~/.emacs.d/rinari")
   (require 'rinari)
-  (global-set-key (kbd "C-x C-M-f") 'find-file-in-project)
+  (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
 
 Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
 included for convienience (and this copy of inf-ruby contains a fix
@@ -23,7 +23,7 @@ it's rather large, so you should download it here:
 
 One possible .init file for nxhtml in rinari would be
 
-;;; nxml (rhtml support)
+;;; nxml (HTML ERB template support)
 (load "~/.emacs.d/nxml/autostart.el")
 
 (setq
@@ -32,8 +32,7 @@ One possible .init file for nxhtml in rinari would be
  nxhtml-skip-welcome t
  indent-region-mode t
  rng-nxml-auto-validate-flag nil
- nxml-degraded t
- )
+ nxml-degraded t)
 
 For a quick overview of Rinari's functions load Rinari as described
 above, then cd into your rails directory (in an eshell or shell

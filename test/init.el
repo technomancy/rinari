@@ -1,4 +1,5 @@
-(add-to-list 'load-path "~/projects/rinari/")
+(cd (file-name-directory (or load-file-name buffer-file-name)))
+(add-to-list 'load-path "..")
 
 ;; TODO: make this more distributable
 ;; For tests
@@ -10,4 +11,4 @@
 (require 'rinari)
 ;; (require 'elunit)
 
-(find-file "~/projects/rinari/test/blah.rhtml")
+(find-file "blah.rhtml")
