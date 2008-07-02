@@ -8,6 +8,8 @@ List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
+* TODO write up some info documentation for Rinari
+
 * TODO inf-ruby enhancement
 
 found an example of an error that the
@@ -106,6 +108,16 @@ modes
 So it
 1) goes to the right place when called from a partial
 2) and brings up a url in minibuffer if an id is needed
+* DONE project-wide search and search/replace
+
+I know you can do this with rgrep, but It would be nice to easily call
+it on the whole project (yml/rhtml/rb files), and it would help guide
+emacs noobs to the powers of rgrep
+
+Danger here is cluttering up Rinari with thin wrappers around existing
+emacs tools...
+
+rinari-rgrep
 
 * DONE errors / tests
 something to speed up the cycle of

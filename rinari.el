@@ -303,6 +303,13 @@ editing of the url."
     (if (string-match "sqlite" adapter) (setf adapter "sqlite"))
     (eval (list (intern (concat "sql-" adapter)))) (rinari-launch)))
 
+(defun rinari-rgrep (&optional arg)
+  "Search through the rails project for a string or `regexp'.
+With optional prefix argument just run `rgrep'."
+  (interactive "P")
+  (if arg (call-interactively 'rgrep)
+    (rgrep (read-from-minibuffer "search for: ") "*.rb *.rhtml *.yml" (rinari-root))))
+
 (defun rinari-run-what (&optional arg)
   "Allows the user to run a function selected from amongst all of
 the rinari functions displaying their names and keybindings."
@@ -329,7 +336,8 @@ the rinari functions displaying their names and keybindings."
   '(("\t" . 'rinari-run-what) ("o" . 'toggle-buffer) ("s" . 'rinari-sql)
     ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test-function)
     ("r" . 'rinari-rake) ("c" . 'rinari-console) ("b" . 'rinari-browse-view)
-    ("v" . 'rinari-find-view) ("a" . 'rinari-find-action) ("w" . 'rinari-server))
+    ("v" . 'rinari-find-view) ("a" . 'rinari-find-action) ("w" . 'rinari-server)
+    ("g" . 'rinari-rgrep))
   "alist mapping of keys to functions in `rinari-minor-mode'")
 
 (mapcar (lambda (el)
