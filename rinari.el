@@ -43,9 +43,7 @@
 ;; (add-to-list 'load-path "~/.emacs.d/rinari")
 ;; (require 'rinari)
 
-;;; Todo:
-
-;; see TODO file in this directory
+;; See TODO file in this directory.
 
 ;;; Code:
 (require 'ruby-mode)
@@ -111,7 +109,7 @@ view at which CONTROLLER#FUNCTION points."
 					 (thing-at-point 'line)) (point)) renders)))
 	    (if renders
 		;; if method contains render/redirects select one and follow it
-		(let ((render (if (equal 1 (length renders)) 
+		(let ((render (if (equal 1 (length renders))
 				  (caar renders)
 				(completing-read "follow which render: "
 						 (mapcar 'car renders)))))
@@ -215,7 +213,7 @@ view at which CONTROLLER#FUNCTION points."
 		     (file-name-sans-extension
 		      (file-name-nondirectory buffer-file-name))))
 	 (controller (or (cdr (assoc ":controller" view-alist))
-			 (file-name-nondirectory 
+			 (file-name-nondirectory
 			  (expand-file-name ".")))))
     (find-file (concat (rinari-root)
 		       "app/controllers/"
@@ -246,6 +244,7 @@ test, then try to jump to the related test using `toggle-buffer'."
     (if path (ruby-run-w/compilation command)
       (message "no test available"))))
 
+;; TODO: maybe replace this with a snippets package; needs research
 (defun rinari-insert-erb-skeleton (no-equals)
   (interactive "P")
   (insert "<%")
@@ -320,7 +319,7 @@ the rinari functions displaying their names and keybindings."
 ;;--------------------------------------------------------------------
 ;;
 ;; minor mode and keymaps
-;; 
+;;
 (defvar rinari-minor-mode-map
   (let ((map (make-sparse-keymap)))
     map)
