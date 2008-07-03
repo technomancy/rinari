@@ -307,8 +307,9 @@ editing of the url."
   "Search through the rails project for a string or `regexp'.
 With optional prefix argument just run `rgrep'."
   (interactive "P")
+  (grep-compute-defaults)
   (if arg (call-interactively 'rgrep)
-    (rgrep (read-from-minibuffer "search for: ") "*.rb *.rhtml *.yml" (rinari-root))))
+    (funcall 'rgrep (read-from-minibuffer "search for: ") "*.rb *.rhtml *.yml" (rinari-root))))
 
 (defun rinari-run-what (&optional arg)
   "Allows the user to run a function selected from amongst all of
