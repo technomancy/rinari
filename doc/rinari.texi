@@ -3,8 +3,7 @@
 @setfilename rinari.info
 @settitle Rinari: Ruby on Rails Minor Mode
 
-@set VERSION 6.04c
-@set DATE May 2008
+@set DATE July 2008
 
 @dircategory Emacs
 @direntry
@@ -64,15 +63,28 @@ Software Foundation raise funds for GNU development.''
 @insertcopying
 @end ifnottex
 
+@b{Contents}
+
 @menu
 * Introduction::                Brief summary of what Rinari is (and isn't)
-* Install::                     Installing Rinari on you system
+* Install::                     Installing Rinari in your Emacs
 * Navigation::                  Jumping between files in your Rails project
 * Test Driven Development::     Support for Test Driven Development
 * Execution::                   Running tests, consoles, and web-servers
 * Miscellaneous::               Leftover functions
 * Bundles::                     Independently loadable extra functionality
 @end menu
+
+@b{Links}
+
+@itemize
+@item Latest versions available at
+ @uref{http://github.com/eschulte/rinari/tree/master}
+@item For an html version of this documentation see
+ @uref{http://rinari.rubyforge.org/}
+@item For information on the previous version of Rinari see
+ @uref{http://rinari.rubyforge.org/old.html}
+@end itemize
 
 @node Introduction, Install, Top, Top
 @chapter Introduction
@@ -90,8 +102,7 @@ use when working on a Rails applications including...
 @itemize
 @item @emph{Navigation} between files in your Rails project (@pxref{Navigation})
 @item Facilitation of @emph{Test Driven Development} (@pxref{Test Driven Development})
-@item @emph{Execution} of tests, consoles, and web-servers with links
-from errors back to the source code  (@pxref{Execution})
+@item @emph{Execution} of tests, consoles, and web-servers (@pxref{Execution})
 @end itemize
 
 Following the lead of Dmitry Galinsky's suggestion for emacs-rails
@@ -100,20 +111,37 @@ additional pieces of functionality like snippets, editing of rhtml files
 be made available as modular Bundles @pxref{Bundles}, which would be
 individually loaded.
 
-For more information and the latest version see
+See
 @itemize
-@item @uref{http://github.com/eschulte/rinari/tree/master}
-@item @uref{http://rinari.rubyforge.org}
+@item @uref{http://github.com/eschulte/rinari/tree/master} for the
+latest versions
+@item @uref{http://groups.google.com/group/emacs-on-rails} for
+discussion of Emacs and Rails developments
 @end itemize
 
 @node Install, Navigation, Introduction, Top
 @chapter Install
 @cindex install
 
+For information on obtaining and installing emacs see
+@uref{www.gnu.org/software/emacs/} or
+@uref{http://en.wikipedia.org/wiki/Emacs}.  If you are new to Emacs or
+any of the following doesn't make sense to you, read through the Emacs
+tutorial.  To do so press @code{C-ht} (meaning press the ``h'' key while
+holding down the ``Ctrl'' key and then press the ``t'' key).
+
 The latest Rinari can be obtained from
-@uref{http://github.com/eschulte/rinari/tree/master}.  Copy the base
-rinari directory into your Emacs lisp directory, assumed here to be
-~/.emacs.d. Add these lines of code to your .emacs file:
+@uref{http://github.com/eschulte/rinari/tree/master}.  Select the
+``download'' button to grab an archive of the source code, or checkout a
+copy using git with the command.
+
+@example
+git clone git://github.com/eschulte/rinari.git
+@end example
+
+Place the base rinari directory into your Emacs lisp directory, assumed
+here to be ~/.emacs.d. To automatically load Rinari every time you open
+Emacs add these lines of code to your .emacs file:
 
 @lisp
   (add-to-list 'load-path "~/.emacs.d/rinari")
@@ -121,9 +149,9 @@ rinari directory into your Emacs lisp directory, assumed here to be
   (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
 @end lisp
 
-To make and install the info documentation cd into the doc/ directory
-and run makeinfo to make the .info documentation then run install-info
-as the super user.
+@emph{(Optional)} To make and install the info documentation cd into the
+doc/ directory and run makeinfo to make the .info documentation then run
+install-info as the super user.
 
 @example
 cd doc/
@@ -131,8 +159,8 @@ makeinfo rinari.texi
 sudo install-info rinari.info
 @end example
 
-To make an html version of the documentation cd into the documentation
-directory and run makeinfo -- html
+@emph{(Optional)} To make an html version of the documentation cd into
+the documentation directory and run makeinfo -- html
 
 @example
 cd doc/
@@ -141,7 +169,7 @@ makeinfo --html rinari.texi
 
 Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
 included for convienience (also inf-ruby.el and ruby-mode.el contain
-minor fixes not yet in the official version). Nxhtml-mode is not
+minor fixes not yet in the official versions). Nxhtml-mode is not
 included because it's rather large, so you should download it
 independently
 @uref{http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html}.
@@ -161,7 +189,7 @@ One possible .init file for nxhtml in rinari would be
  nxml-degraded t)
 @end lisp
 
-While ido-mode
+@emph{(Optional)} While ido-mode
 @uref{http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings} is
 not strictly required it is very helpfull in combination with many of
 Rinari functions.  For more information about enabling ido-mode see the

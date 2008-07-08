@@ -308,16 +308,4 @@ easy enough
 
  LocalWords:  elsif elseif keybinding
 
-* recent changes
-- toggle now follows incomplete versions of method names
-- rinari-find-which-view now works from tests as well as controllers
-- working on info documentation (see doc/)
-- more robust regexp in ruby-compilation
-- added ruby-kill-sexp to ruby-mode.el (navigation by sexp is
-  phenomenal, it allows you to move, kill, and yank code by logical
-  unit rather than character)
-- moved all navigation/movement commands into separate file.  Major
-  overhaul of movement commands allowing jumping to the related
-  view/controller/model/test from the current location with one
-  command
-- addition of elunit.el and some added some unit tests
+
