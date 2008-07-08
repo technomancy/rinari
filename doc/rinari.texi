@@ -1,6 +1,6 @@
 \input texinfo
 @c %**start of header
-@setfilename rinari.info
+@setfilename doc/rinari.info
 @settitle Rinari: Ruby on Rails Minor Mode
 
 @set DATE July 2008
@@ -149,22 +149,19 @@ Emacs add these lines of code to your .emacs file:
   (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
 @end lisp
 
-@emph{(Optional)} To make and install the info documentation cd into the
-doc/ directory and run makeinfo to make the .info documentation then run
-install-info as the super user.
+@emph{(Optional)} To make and install the info documentation cd into
+@code{rinari} directory and run the following rake command (you must
+have super user privileges to install the info documentation).
 
 @example
-cd doc/
-makeinfo rinari.texi
-sudo install-info rinari.info
+rake doc:install_info
 @end example
 
 @emph{(Optional)} To make an html version of the documentation cd into
-the documentation directory and run makeinfo -- html
+the @code{rinari} directory and run the following rake command.
 
 @example
-cd doc/
-makeinfo --html rinari.texi
+rake doc:make_html
 @end example
 
 Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
@@ -326,6 +323,29 @@ If there is sufficient desire for such bundles or if @b{ideally} said
 bundles are interoperable between emacs-rails and Rinari, they will be
 listed here.
 
-pending...
+@menu
+* rhtml Mode::    Minor Mode for editing rhtml files (without MMM-Mode)
+@end menu
+
+@node rhtml Mode, , Bundles, Bundles
+@section rhtml Mode
+@cindex rhtml Mode
+
+@emph{rhtml Mode} is part of the original Rinari project.  It allows
+editing of rhtml projects without having to use the often Flakey
+MMM-Mode @uref{http://www.emacswiki.org/cgi-bin/wiki/MultipleModes}.
+@emph{rhtml Mode} is presented here as an alternate option to
+nxhtml-mode which doesn't work for many people.
+
+To use @emph{rhtml Mode} for editing rhtml files, download the rhtml
+directory from @uref{http://github.com/eschulte/rhtml/tree/master} and
+place it in your elisp directory, then include the following in you
+emacs .init file
+
+@lisp
+;;; rhtml mode
+(add-to-list 'load-path "~/path/to/your/elisp/rhtml")
+(require 'rhtml-mode)
+@end lisp
 
 @bye
