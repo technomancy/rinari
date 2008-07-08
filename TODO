@@ -10,6 +10,31 @@ for background see http://groups.google.com/group/emacs-on-rails
 
 * TODO write up some info documentation for Rinari
 
+- [X] making progress in [[file:doc/rinari.texi]]
+
+- [X] might want to add information for installing the documentation
+
+- [ ] also post it up to rinari.ruby-forge.org
+
+* TODO rinari movement
+
+From anywhere, get to the related model/controller/test/view
+
+where can you be?
+- view
+- controller
+- model
+- unit-test
+- functional-test
+- other
+
+pending...
+- [X] still need to work on movement from OTHER places
+- [X] look at a better keybinding setup
+- [ ] rails2 style view names
+
+[[info:elisp:Minor Mode Conventions]]
+
 * TODO inf-ruby enhancement
 
 found an example of an error that the
@@ -21,38 +46,6 @@ this was the error line
 SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
 :END:
 
-* TODO make `rinari-find-view' which will follow forms (maybe w/prefix?)
-
-works for the following cases
-- default (goes to the view with the name of the action)
-- follows redirect_to another controller and action
-- follows renders
-- follows redirects to partials
-- render_partial
-- multiple renders (for example from separate clauses in an if
-  statement)
-
-can follow multiple redirects
-
-** DONE enhancement
-sometimes an action will have multiple redirect statements, in which
-case this function should ask the user (with completion) which one to
-follow
-
-
-** DONE better error if run outside of function
-
-
-
-** TODO work with rails2-style view filenames
-
-
-** MAYBE cleanup
-
-this is current the largest set of functions in rinari.el
-
-(hopefully it can be cleaner / less code)
-
 * MAYBE define macro for ido completion
 since we often want to check the availability of ido for completing
 reads it would probably be worth writing a macro to do this.
@@ -60,7 +53,7 @@ reads it would probably be worth writing a macro to do this.
 also, it may be worthwhile breaking utility functions out into a
 separate file...
 
-* MAYBE Make rinari a minor mode that doesn't activate for regular ruby-mode.
+* DONE Make rinari a minor mode that doesn't activate for regular ruby-mode.
   :PROPERTIES:
   :assignee: eschulte
   :END:
@@ -98,16 +91,13 @@ given the above, it seems like an ergonomic option would be to start
 all our rinari key-bindings with \C-c-' with \C-c-'-' running
 something similar to \C-c\C-c in org-mode
 
-** MAYBE key-bindings could probably use improvement
-** MAYBE good minor mode documentation
-something to indicate functions and keybindings, like \C-hm for major
-modes
+* DONE change toggle for incremental search
 
-* MAYBE Make rinari-browse-view smarter
+so something like search_incrementally will match search if
+incrementally isn't available
 
-So it
-1) goes to the right place when called from a partial
-2) and brings up a url in minibuffer if an id is needed
+also, push the "def "s into the variable in toggle.el to try to keep
+it language-agnostic
 * DONE project-wide search and search/replace
 
 I know you can do this with rgrep, but It would be nice to easily call
@@ -157,13 +147,20 @@ appropriate
 
 see [[file:rinari.el::defun%20rinari%20alist%20from%20view][rinari-alist-from-view]]
 
-* DONE ruby-compilation enhancement
+* PARTIAL ruby-compilation enhancement
   
 found a line which didn't match the error-regexp-alist
 
 :SNIP:
 test_create(QueriesControllerTest) [/home/eschulte/work/arf/arf/test/functional/queries_controller_test.rb:60]:
 :END:
+
+and another
+
+:SNIP:
+    /var/lib/gems/1.8/gems/mongrel-1.1.3/bin/mongrel_rails:281
+:END:
+
 * DONE rinari-rake uses ruby-compilation
 * DONE remove rails-script add ruby-compilation
 
@@ -308,3 +305,19 @@ rails-script.el (minor)
 
 easy enough
 
+
+ LocalWords:  elsif elseif keybinding
+
+* recent changes
+- toggle now follows incomplete versions of method names
+- rinari-find-which-view now works from tests as well as controllers
+- working on info documentation (see doc/)
+- more robust regexp in ruby-compilation
+- added ruby-kill-sexp to ruby-mode.el (navigation by sexp is
+  phenomenal, it allows you to move, kill, and yank code by logical
+  unit rather than character)
+- moved all navigation/movement commands into separate file.  Major
+  overhaul of movement commands allowing jumping to the related
+  view/controller/model/test from the current location with one
+  command
+- addition of elunit.el and some added some unit tests

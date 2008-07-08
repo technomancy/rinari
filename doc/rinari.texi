@@ -1,0 +1,303 @@
+\input texinfo
+@c %**start of header
+@setfilename rinari.info
+@settitle Rinari: Ruby on Rails Minor Mode
+
+@set VERSION 6.04c
+@set DATE May 2008
+
+@dircategory Emacs
+@direntry
+* Rinari Minor Mode: (Rinari).      Ruby on Rails Framework Support
+@end direntry
+
+@c Version and Contact Info
+@c @set MAINTAINERSITE @uref{http://orgmode.org,maintainers webpage}
+@set AUTHOR Eric Schulte
+@set MAINTAINER Eric Schulte
+@set MAINTAINEREMAIL @email{schulte dot eric at gmail dot com}
+@set MAINTAINERCONTACT @uref{mailto:schulte dot eric at gmail dot com,contact the maintainer}
+@c %**end of header
+@finalout
+
+@copying
+This manual is for Rinari.
+(Modeled off of the very fine org-mode info documentation.)
+
+Copyright @copyright{} 2006 - 2007 Phil Hagelberg, Forrest Chang, Ryan
+Davis, Paul Stickne, and others, 2008 Eric Schulte
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with the Front-Cover texts being ``A GNU Manual,''
+and with the Back-Cover Texts as in (a) below.  A copy of the
+license is included in the section entitled ``GNU Free Documentation
+License.''
+
+(a) The FSF's Back-Cover Text is: ``You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development.''
+@end quotation
+@end copying
+
+@titlepage
+@title Using Rinari
+
+@subtitle Ruby on Rails Minor Mode
+@author by Eric Schulte
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@c Output the table of contents at the beginning.
+@contents
+
+@ifnottex
+@node Top, Introduction, (dir), (dir)
+@top Rinari
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Introduction::                Brief summary of what Rinari is (and isn't)
+* Install::                     Installing Rinari on you system
+* Navigation::                  Jumping between files in your Rails project
+* Test Driven Development::     Support for Test Driven Development
+* Execution::                   Running tests, consoles, and web-servers
+* Miscellaneous::               Leftover functions
+* Bundles::                     Independently loadable extra functionality
+@end menu
+
+@node Introduction, Install, Top, Top
+@chapter Introduction
+@cindex introduction
+
+@b{R}inari @b{I}s @b{N}ot @b{A} @b{R}uby @b{I}DE.
+
+Well, ok it kind of is. Rinari is a set of Emacs Lisp functions aimed
+towards making Emacs into a top-notch Ruby on Rails development
+environment.
+
+Currently Rinari focuses on the core functionality most everyone would
+use when working on a Rails applications including...
+
+@itemize
+@item @emph{Navigation} between files in your Rails project (@pxref{Navigation})
+@item Facilitation of @emph{Test Driven Development} (@pxref{Test Driven Development})
+@item @emph{Execution} of tests, consoles, and web-servers with links
+from errors back to the source code  (@pxref{Execution})
+@end itemize
+
+Following the lead of Dmitry Galinsky's suggestion for emacs-rails
+additional pieces of functionality like snippets, editing of rhtml files
+(without using nxhtml mode), or support for other tools like rdebug may
+be made available as modular Bundles @pxref{Bundles}, which would be
+individually loaded.
+
+For more information and the latest version see
+@itemize
+@item @uref{http://github.com/eschulte/rinari/tree/master}
+@item @uref{http://rinari.rubyforge.org}
+@end itemize
+
+@node Install, Navigation, Introduction, Top
+@chapter Install
+@cindex install
+
+The latest Rinari can be obtained from
+@uref{http://github.com/eschulte/rinari/tree/master}.  Copy the base
+rinari directory into your Emacs lisp directory, assumed here to be
+~/.emacs.d. Add these lines of code to your .emacs file:
+
+@lisp
+  (add-to-list 'load-path "~/.emacs.d/rinari")
+  (require 'rinari)
+  (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
+@end lisp
+
+To make and install the info documentation cd into the doc/ directory
+and run makeinfo to make the .info documentation then run install-info
+as the super user.
+
+@example
+cd doc/
+makeinfo rinari.texi
+sudo install-info rinari.info
+@end example
+
+To make an html version of the documentation cd into the documentation
+directory and run makeinfo -- html
+
+@example
+cd doc/
+makeinfo --html rinari.texi
+@end example
+
+Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
+included for convienience (also inf-ruby.el and ruby-mode.el contain
+minor fixes not yet in the official version). Nxhtml-mode is not
+included because it's rather large, so you should download it
+independently
+@uref{http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html}.
+
+One possible .init file for nxhtml in rinari would be
+
+@lisp
+;;; nxml (HTML ERB template support)
+(load "~/.emacs.d/nxml/autostart.el")
+
+(setq
+ nxhtml-global-minor-mode t
+ mumamo-chunk-coloring 'submode-colored
+ nxhtml-skip-welcome t
+ indent-region-mode t
+ rng-nxml-auto-validate-flag nil
+ nxml-degraded t)
+@end lisp
+
+While ido-mode
+@uref{http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings} is
+not strictly required it is very helpfull in combination with many of
+Rinari functions.  For more information about enabling ido-mode see the
+link below, or to just go ahead and try it out add the following to your
+emacs init file.
+
+@lisp
+;; Interactively Do Things
+(require 'ido)
+(ido-mode t)
+@end lisp
+
+The remainder of this document describes the functions and environments
+provided by Rinari, if you would rather just get start, then restart
+emacs, cd into a Rails application in shell or eshell, or open up a file
+in a Rails application.  To see all of the functions provided by rinari
+try @code{C-hb} then search for rinari, or @code{M-x rinari-<tab>}.
+
+@node Navigation, Test Driven Development, Install, Top
+@chapter Navigation
+@cindex navigation
+
+Rinari leverages the structure of Rails projects to allow immediate
+navigation between source files.  The following four commands use
+information on the file and method you are current visiting to open the
+appropriate model, controller, view or test file and method.
+
+@defun rinari-find-model
+Go to the most logical model given the current location.
+@end defun
+
+@defun rinari-find-controller
+Go to the most logical controller given the current location.
+@end defun
+
+@defun rinari-find-view
+Go to the most logical view given the current location.
+@end defun
+
+@defun rinari-find-test
+Go to the most logical test given the current location.
+@end defun
+
+So for example if you are in a buffer open to @emph{foo_controller.rb},
+a call to @code{rinari-find-model} will open the @emph{foo.rb} model
+file.  Say you are currently inside the @emph{bar} method in a buffer
+visiting @emph{foo_controller.rb}, then calling @code{rinari-find-test}
+will take you to the @emph{test_bar} method in
+@emph{test/functional/foo_controller_test.rb}, or calling
+@code{rinari-find-view} will open @emph{app/views/foos/bar.rhtml}, the
+bar method contains a redirect or render call in which case those will
+be followed to find the correct view to display.
+
+@node Test Driven Development, Execution, Navigation, Top
+@chapter Test Driven Development
+@cindex test driven development
+
+Rinari facilitates a development style reliant upon unit and functional
+tests by providing a single command @code{rinari-test} which executes
+the unit or functional test related to the current method or buffer.
+The results of the test are dumped into an emacs Compilation buffer
+which allows jumping between error messages and the related source code.
+
+@node Execution, Miscellaneous, Test Driven Development, Top
+@chapter Execution
+@cindex execution
+
+Some Rails tools work better inside of emacs.  Specifically running rake
+tasks, tests, console, the web-server, and browsing your SQL database.
+Rinari provides functions for running all of these tools inside
+specialized emacs buffers.
+
+@defun rinari-rake
+Tab completion selection of a rake task to execute with the output
+dumped to a compilation buffer allowing jumping between errors and
+source code.  With optional prefix argument allows editing of the rake
+command.
+@end defun
+
+@defun rinari-console
+"Run script/console in a compilation buffer, with command
+history and links between errors and source code.  Use a prefix
+argument to edit command line options."
+@end defun
+
+@defun rinari-sql
+Browse the application's database.  Looks up login information from your
+conf/database.sql file.
+@end defun
+
+@defun rinari-web-server
+Run script/server.  Dump output to a compilation buffer allowing jumping
+between errors and source code.
+@end defun
+
+@defun rinari-test
+Test the current ruby function.  If current function is not a
+test, then try to jump to the related test using `toggle-buffer'.
+Dump output to a compilation buffer allowing jumping between
+errors and source code.
+@end defun
+
+@node Miscellaneous, Bundles, Execution, Top
+@chapter Miscellaneous
+@cindex Miscellaneous
+
+Miscellaneous functions...
+
+@defun rinari-browse-url
+Browse the url related to the current view, controller, test, or model
+with `rinari-browse-url-func' which defaults to `browse-url'.
+@end defun
+
+@defun rinari-rgrep
+Search through the rails project using `rgrep' for a string or `regexp'.
+With optional prefix argument just run `rgrep'.
+@end defun
+
+@defun rinari-insert-erb-skeleton
+Insert an erb skeleton at point, with optional prefix argument don't
+include an '='.
+@end defun
+
+@node Bundles, , Miscellaneous, Top
+@chapter Bundles
+@cindex Bundles
+
+Previous versions of both emacs-rails mode, and Rinari were very feature
+rich, but bloated and cumbersome.  To avoid this Dmitry Galinsky (who I
+believe is the author of emacs-rails) has suggested providing much of
+this additional functionality as independent individual loadable bundles
+
+If there is sufficient desire for such bundles or if @b{ideally} said
+bundles are interoperable between emacs-rails and Rinari, they will be
+listed here.
+
+pending...
+
+@bye

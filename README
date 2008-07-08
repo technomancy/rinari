@@ -1,6 +1,6 @@
-= Rinari Is Not A Ruby IDE.
+Rinari Is Not A Ruby IDE.
   http://rinari.rubyforge.org
-  http://github.com/eschulte/rinari/tree/master (for this fork of Rinari)
+  http://github.com/eschulte/rinari/tree/master
 
 Well, ok it kind of is. Rinari is a set of Emacs Lisp modes that is
 aimed towards making Emacs into a top-notch Ruby and Rails development
@@ -14,12 +14,25 @@ your .emacs file:
   (require 'rinari)
   (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
 
-Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
-included for convienience (and this copy of inf-ruby contains a fix
-not yet in the official version). Nxhtml-mode is not included because
-it's rather large, so you should download it here:
+To make and install the info documentation cd into the doc/ directory
+and run makeinfo to make the .info documentation then run install-info
+as the super user.
 
-  http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html
+cd doc/
+makeinfo rinari.texi
+sudo install-info rinari.info
+
+To make an html version of the documentation cd into the documentation
+directory and run makeinfo -- html
+
+cd doc/
+makeinfo --html rinari.texi
+
+Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
+included for convienience (also inf-ruby.el and ruby-mode.el contain
+minor fixes not yet in the official version). Nxhtml-mode is not
+included because it's rather large, so you should download it
+independently[1].
 
 One possible .init file for nxhtml in rinari would be
 
@@ -34,10 +47,21 @@ One possible .init file for nxhtml in rinari would be
  rng-nxml-auto-validate-flag nil
  nxml-degraded t)
 
-For a quick overview of Rinari's functions load Rinari as described
-above, then cd into your rails directory (in an eshell or shell
-buffer), or open a file in a rails directory and run
-`rinari-run-what' \C-c'<TAB>.
+While ido-mode[2] is not strictly required it is very helpfull in
+combination with many of Rinari functions.  For more information about
+enabling ido-mode see the link below, or to just go ahead and try it out add
 
-For discussion of Rinari development see
-http://groups.google.com/group/emacs-on-rails
+;; Interactively Do Things
+(require 'ido)
+(ido-mode t)
+
+to your emacs init file.
+
+For discussion of Rinari development see[3]
+
+[1] http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html
+
+[2] http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings
+
+[3] http://groups.google.com/group/emacs-on-rails
+

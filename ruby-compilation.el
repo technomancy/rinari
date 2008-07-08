@@ -36,7 +36,8 @@
 (require 'pcmpl-rake)
 
 (defvar ruby-compilation-error-regexp
-  "^\\([[:space:]]*\\|.*\\[\\|.*at \\)\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)[]:)]"
+  ;; "^\\([[:space:]]*\\|.*\\[\\|.*at \\)\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)[]:)$]"
+  "^\\([[:space:]]*\\|.*\\[\\|[^\*].*at \\)\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)[]:)\n]?"
   "regular expression to match errors in ruby process output")
 
 (defvar ruby-compilation-error-regexp-alist

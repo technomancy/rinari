@@ -103,6 +103,7 @@
     (define-key map "\M-\C-e" 'ruby-end-of-defun)
     (define-key map "\M-\C-b" 'ruby-backward-sexp)
     (define-key map "\M-\C-f" 'ruby-forward-sexp)
+    (define-key map "\M-\C-k" 'ruby-kill-sexp)
     (define-key map "\M-\C-p" 'ruby-beginning-of-block)
     (define-key map "\M-\C-n" 'ruby-end-of-block)
     (define-key map "\M-\C-h" 'ruby-mark-defun)
@@ -979,6 +980,17 @@ An end of a defun is found by moving forward from the beginning of one."
 	((error)))
       i)))
 
+(defun ruby-kill-sexp (&optional cnt)
+  ;; TODO: doc
+  (interactive "P")
+  (let ((end (progn
+	       (ruby-forward-sexp cnt)
+	       (point)))
+	(start (progn
+		 (ruby-backward-sexp cnt)
+		 (point))))
+    (kill-region start end)))
+
 (defun ruby-reindent-then-newline-and-indent ()
   ;; TODO: doc
   (interactive "*")
@@ -1046,13 +1058,14 @@ balanced expression is found."
       (save-excursion
 	(let (mname mlist (indent 0))
 	  ;; get current method (or class/module)
-	  (if (re-search-backward
-	       (concat "^[ \t]*\\(def\\|class\\|module\\)[ \t]+"
-		       "\\("
-		       ;; \\. and :: for class method
-		       "\\([A-Za-z_]" ruby-symbol-re "*\\|\\.\\|::" "\\)" 
-		       "+\\)")
-	       nil t)
+	  (if (or (move-end-of-line 1)
+		  (re-search-backward
+		   (concat "^[ \t]*\\(def\\|class\\|module\\)[ \t]+"
+			   "\\("
+			   ;; \\. and :: for class method
+			   "\\([A-Za-z_]" ruby-symbol-re "*\\|\\.\\|::" "\\)" 
+			   "+\\)")
+		   nil t))
 	      (progn
 		(setq mname (match-string 2))
 		(unless (string-equal "def" (match-string 1))

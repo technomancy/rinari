@@ -68,20 +68,24 @@
 `which-function', but others may be preferable, for example
 `ruby-add-log-current-method' is more reliable in ruby code.")
 
+(defcustom toggle-method-format
+  "def %s"
+  "`format' string when searching for a method in search code")
+
 (defcustom toggle-mapping-styles
-  '((zentest . (("app/controllers/\\1.rb"     . "test/controllers/\\1_test.rb")
-                ("app/views/\\1.rb"           . "test/views/\\1_test.rb")
-                ("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
-                ("lib/\\1.rb"                 . "test/unit/test_\\1.rb")))
-    (rspec   . (("app/models/\\1.rb"          . "spec/models.\\1_spec.rb")
-                ("app/controllers/\\1.rb"     . "spec/controllers/\\1_spec.rb")
-                ("app/views/\\1.rb"           . "spec/views/\\1_spec.rb")
-                ("app/helpers/\\1.rb"         . "spec/helpers/\\1_spec.rb")))
-    (rails   . (("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
-                ("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
-                ("lib/\\1.rb"                 . "test/unit/test_\\1.rb")))
-    (ruby    . (("lib/\\1.rb"                 . "test/test_\\1.rb")
-                ("\\1.rb"                     . "test_\\1.rb"))))
+  '((zentest . (("app/controllers/\\1.rb" . "test/controllers/\\1_test.rb")
+                ("app/views/\\1.rb"       . "test/views/\\1_test.rb")
+                ("app/models/\\1.rb"      . "test/unit/\\1_test.rb")
+                ("lib/\\1.rb"             . "test/unit/test_\\1.rb")))
+    (rspec   . (("app/models/\\1.rb"      . "spec/models.\\1_spec.rb")
+                ("app/controllers/\\1.rb" . "spec/controllers/\\1_spec.rb")
+                ("app/views/\\1.rb"       . "spec/views/\\1_spec.rb")
+                ("app/helpers/\\1.rb"     . "spec/helpers/\\1_spec.rb")))
+    (rails   . (("app/controllers/\\1.rb" . "test/functional/\\1_test.rb")
+                ("app/models/\\1.rb"      . "test/unit/\\1_test.rb")
+                ("lib/\\1.rb"             . "test/unit/test_\\1.rb")))
+    (ruby    . (("lib/\\1.rb"             . "test/test_\\1.rb")
+                ("\\1.rb"                 . "test_\\1.rb"))))
   "A list of (name . toggle-mapping) rules used by toggle-filename."
   :group 'toggle
   :type '(repeat (cons string string)))
@@ -150,10 +154,17 @@ match is found, switches to that buffer."
 	(if (string-match "\\(.+\\)#\\(.+\\)" new-name)
 	    (let ((path (match-string 1 new-name))
 		  (method (match-string 2 new-name)))
-	      (find-file path)
-	      (goto-char (point-min))
-	      (if (search-forward (concat "def " method) nil t) t
-		(message "%s not defined in %s" method (file-name-nondirectory path))))
+	      (flet ((try-rest (meth)
+			       (goto-char (point-min))
+			       (if meth
+				   (if (and (goto-char (point-max))
+					    (search-backward
+					     (format toggle-method-format meth) nil t)) t
+				     (try-rest (and (string-match "\\(.*\\)[-_]" meth)
+						    (match-string 1 meth))))
+				 (message "%s not defined in %s" method (file-name-nondirectory path)))))
+		(find-file path)
+		(try-rest method)))
 	  (find-file new-name))
       (message (concat "Match not found for " (buffer-file-name))))))
 
