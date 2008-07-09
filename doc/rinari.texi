@@ -23,22 +23,9 @@
 This manual is for Rinari.
 (Modeled off of the very fine org-mode info documentation.)
 
-Copyright @copyright{} 2006 - 2007 Phil Hagelberg, Forrest Chang, Ryan
-Davis, Paul Stickne, and others, 2008 Eric Schulte
+Copyright @copyright{} 2008 Eric Schulte, 2006 - 2007 Phil Hagelberg,
+Forrest Chang, Ryan Davis, Paul Stickne, and others
 
-@quotation
-Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU Free Documentation License, Version 1.1 or
-any later version published by the Free Software Foundation; with no
-Invariant Sections, with the Front-Cover texts being ``A GNU Manual,''
-and with the Back-Cover Texts as in (a) below.  A copy of the
-license is included in the section entitled ``GNU Free Documentation
-License.''
-
-(a) The FSF's Back-Cover Text is: ``You have freedom to copy and modify
-this GNU Manual, like GNU software.  Copies published by the Free
-Software Foundation raise funds for GNU development.''
-@end quotation
 @end copying
 
 @titlepage
@@ -105,10 +92,14 @@ use when working on a Rails applications including...
 @item @emph{Execution} of tests, consoles, and web-servers (@pxref{Execution})
 @end itemize
 
+Rinari does not deal with syntax highlighting for rhtml files, while all
+of the Rinari functions will be available from within your rhtml files
+you are free to chose from the many stand-alone solutions for rhtml
+major modes @pxref{Rhtml Setup}.
+
 Following the lead of Dmitry Galinsky's suggestion for emacs-rails
-additional pieces of functionality like snippets, editing of rhtml files
-(without using nxhtml mode), or support for other tools like rdebug may
-be made available as modular Bundles @pxref{Bundles}, which would be
+additional pieces of functionality like snippets, or tools like rdebug
+may be made available as modular Bundles @pxref{Bundles}, which would be
 individually loaded.
 
 See
@@ -119,16 +110,42 @@ latest versions
 discussion of Emacs and Rails developments
 @end itemize
 
-@node Install, Navigation, Introduction, Top
+@node Install, Basic Setup, Introduction, Top
 @chapter Install
 @cindex install
 
-For information on obtaining and installing emacs see
+@b{Emacs}
+
+Having a working copy and working knowledge of Emacs are definite
+prerequisites for using Rinari.
+
+@itemize
+@item For information on obtaining and installing emacs see
 @uref{www.gnu.org/software/emacs/} or
-@uref{http://en.wikipedia.org/wiki/Emacs}.  If you are new to Emacs or
-any of the following doesn't make sense to you, read through the Emacs
-tutorial.  To do so press @code{C-ht} (meaning press the ``h'' key while
-holding down the ``Ctrl'' key and then press the ``t'' key).
+@uref{http://en.wikipedia.org/wiki/Emacs}.
+@item If you are new to Emacs or any of the following doesn't make sense
+to you, read through the Emacs tutorial.  To do so open Emacs and press
+@code{C-ht} (meaning press the ``h'' key while holding down the ``Ctrl''
+key and then press the ``t'' key).
+@end itemize
+
+@b{Rinari}
+
+@menu
+* Basic Setup::          The minimum required to get going with Rinari
+* Rhtml Setup::          Select and setup a Major mode for rhtml files
+* Optional Setup::       Some additional setup options
+@end menu
+
+The remainder of this document describes the functions, and environments
+of Rinari, if you would rather just get started, then restart emacs, cd
+into a Rails application in shell or eshell, or open up a file in a
+Rails application.  To see all of the functions provided by rinari try
+@code{C-hb} then search for rinari, or @code{M-x rinari-<tab>}.
+
+@node Basic Setup, Rhtml Setup, Install, Install
+@section Basic Setup
+@cindex Basic Setup
 
 The latest Rinari can be obtained from
 @uref{http://github.com/eschulte/rinari/tree/master}.  Select the
@@ -139,43 +156,48 @@ copy using git with the command.
 git clone git://github.com/eschulte/rinari.git
 @end example
 
-Place the base rinari directory into your Emacs lisp directory, assumed
-here to be ~/.emacs.d. To automatically load Rinari every time you open
-Emacs add these lines of code to your .emacs file:
+Place the base rinari directory into your Emacs lisp directory. To
+automatically load Rinari every time you open Emacs add these lines of
+code to your .emacs file:
 
 @lisp
-  (add-to-list 'load-path "~/.emacs.d/rinari")
+  (add-to-list 'load-path "~/path/to/your/elisp/rinari")
   (require 'rinari)
   (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
 @end lisp
 
-@emph{(Optional)} To make and install the info documentation cd into
-@code{rinari} directory and run the following rake command (you must
-have super user privileges to install the info documentation).
+@node Rhtml Setup, Optional Setup, Basic Setup, Install
+@section Rhtml Setup
+@cindex Rhtml Setup
 
-@example
-rake doc:install_info
-@end example
+There are three options for editing .rhtml files in Emacs.  They are
+presented here in order of decreasing functionality.
 
-@emph{(Optional)} To make an html version of the documentation cd into
-the @code{rinari} directory and run the following rake command.
+@menu
+* nXhtml-Mode::           a package for web development
+* MuMaMo-Mode::           allows multiple major modes in a single buffer
+@end menu
 
-@example
-rake doc:make_html
-@end example
+For editing rhtml files without using multiple major modes see
+@pxref{rhtml-Mode}
 
-Copies of ruby-mode.el, inf-ruby.el, and other dependencies have been
-included for convienience (also inf-ruby.el and ruby-mode.el contain
-minor fixes not yet in the official versions). Nxhtml-mode is not
-included because it's rather large, so you should download it
-independently
-@uref{http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html}.
+@node nXhtml-Mode, MuMaMo-Mode, Rhtml Setup, Rhtml Setup
+@subsection nXhtml-Mode
+@cindex nXhtml-Mode
 
-One possible .init file for nxhtml in rinari would be
+nXhtml-Mode is a package for web development with Emacs.  For more
+information see
+@uref{http://www.emacswiki.org/cgi-bin/wiki/NxhtmlMode#toc1}.
+
+To use nXhtml-Mode mode download it from
+@uref{http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html}.  Then save
+the resulting directory into your elisp directory and add the following
+to your Emacs init file (replacing ``nxml-directory'' with the name of
+your downloaded nxml directory).
 
 @lisp
 ;;; nxml (HTML ERB template support)
-(load "~/.emacs.d/nxml/autostart.el")
+(load "~/path/to/your/elisp/nxml-directory/autostart.el")
 
 (setq
  nxhtml-global-minor-mode t
@@ -186,7 +208,53 @@ One possible .init file for nxhtml in rinari would be
  nxml-degraded t)
 @end lisp
 
-@emph{(Optional)} While ido-mode
+@node MuMaMo-Mode, , nXhtml-Mode, Rhtml Setup
+@subsection MuMaMo-Mode
+@cindex MuMaMo-Mode
+
+MuMaMo-Mode allow @b{Mu}ltiple @b{Ma}jor @b{Mo}des in a single Emacs
+buffer.  For more information see
+@uref{http://www.emacswiki.org/cgi-bin/wiki/MuMaMo}.
+
+MuMaMo-Mode comes bundles with nXhtml-Mode, so to install it download
+nXhtml-Mode from
+@uref{http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html}.  To use
+MuMaMo-Mode when editing rhtml files, save the resulting directory into
+your elisp directory, then add the following to your Emacs init file
+(replacing ``nxml-directory'' with the name of your downloaded nxml
+directory).
+
+@lisp
+;; MuMaMo-Mode for rhtml files
+(add-to-list 'load-path "~/path/to/your/elisp/nxml-directory/util")
+(require 'mumamo-fun)
+(setq mumamo-chunk-coloring 'submode-colored)
+@end lisp
+
+@node Optional Setup, Navigation, Rhtml Setup, Install
+@section Optional Setup
+@cindex Optional Setup
+
+@b{documentation}
+
+To make and install the info documentation cd into @code{rinari}
+directory and run the following rake command (you must have super user
+privileges to install the info documentation).
+
+@example
+rake doc:install_info
+@end example
+
+To make an html version of the documentation cd into the @code{rinari}
+directory and run the following rake command.
+
+@example
+rake doc:make_html
+@end example
+
+@b{ido-mode}
+
+While ido-mode
 @uref{http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings} is
 not strictly required it is very helpfull in combination with many of
 Rinari functions.  For more information about enabling ido-mode see the
@@ -199,13 +267,7 @@ emacs init file.
 (ido-mode t)
 @end lisp
 
-The remainder of this document describes the functions and environments
-provided by Rinari, if you would rather just get start, then restart
-emacs, cd into a Rails application in shell or eshell, or open up a file
-in a Rails application.  To see all of the functions provided by rinari
-try @code{C-hb} then search for rinari, or @code{M-x rinari-<tab>}.
-
-@node Navigation, Test Driven Development, Install, Top
+@node Navigation, Test Driven Development, Optional Setup, Top
 @chapter Navigation
 @cindex navigation
 
@@ -310,7 +372,7 @@ Insert an erb skeleton at point, with optional prefix argument don't
 include an '='.
 @end defun
 
-@node Bundles, , Miscellaneous, Top
+@node Bundles, rhtml-Mode, Miscellaneous, Top
 @chapter Bundles
 @cindex Bundles
 
@@ -324,26 +386,26 @@ bundles are interoperable between emacs-rails and Rinari, they will be
 listed here.
 
 @menu
-* rhtml Mode::    Minor Mode for editing rhtml files (without MMM-Mode)
+* rhtml-Mode::    Minor Mode for editing rhtml files (without MMM-Mode)
 @end menu
 
-@node rhtml Mode, , Bundles, Bundles
-@section rhtml Mode
-@cindex rhtml Mode
+@node rhtml-Mode, , Bundles, Bundles
+@section rhtml-Mode
+@cindex rhtml-Mode
 
-@emph{rhtml Mode} is part of the original Rinari project.  It allows
+@emph{rhtml-mode} is part of the original Rinari project.  It allows
 editing of rhtml projects without having to use the often Flakey
 MMM-Mode @uref{http://www.emacswiki.org/cgi-bin/wiki/MultipleModes}.
-@emph{rhtml Mode} is presented here as an alternate option to
+@emph{rhtml-mode} is presented here as an alternate option to
 nxhtml-mode which doesn't work for many people.
 
-To use @emph{rhtml Mode} for editing rhtml files, download the rhtml
+To use @emph{rhtml-mode} for editing rhtml files, download the rhtml
 directory from @uref{http://github.com/eschulte/rhtml/tree/master} and
 place it in your elisp directory, then include the following in you
 emacs .init file
 
 @lisp
-;;; rhtml mode
+;;; rhtml-mode
 (add-to-list 'load-path "~/path/to/your/elisp/rhtml")
 (require 'rhtml-mode)
 @end lisp

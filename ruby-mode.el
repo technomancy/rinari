@@ -316,7 +316,7 @@ The variable ruby-indent-level controls the amount of indentation.
   (set (make-local-variable 'font-lock-syntactic-keywords)
        ruby-font-lock-syntactic-keywords)
 
-  (run-hooks 'ruby-mode-hook))
+  (run-mode-hooks 'ruby-mode-hook))
 
 (defun ruby-current-indentation ()
   "Return the indentation level of current line."
