@@ -8,14 +8,7 @@ List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
-* TODO write up some info documentation for Rinari
-
-- [X] making progress in [[file:doc/rinari.texi]]
-
-- [X] might want to add information for installing the documentation
-
-- [ ] also post it up to rinari.ruby-forge.org
-
+* TODO full test coverage
 * TODO rinari movement
 
 From anywhere, get to the related model/controller/test/view
@@ -33,20 +26,15 @@ pending...
 - [X] look at a better keybinding setup
 - [ ] rails2 style view names
 
-[[info:elisp:Minor Mode Conventions]]
+* DONE write up some info documentation for Rinari
 
-* TODO inf-ruby enhancement
+- [X] making progress in [[file:doc/rinari.texi]]
 
-found an example of an error that the
-`inferior-ruby-error-regexp-alist' in inf-ruby.el doesn't match
+- [X] might want to add information for installing the documentation
 
-this was the error line
+- [X] also post it up to rinari.ruby-forge.org
 
-:SNIP:
-SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
-:END:
-
-* MAYBE define macro for ido completion
+* DONE define macro for ido completion
 since we often want to check the availability of ido for completing
 reads it would probably be worth writing a macro to do this.
 
@@ -146,6 +134,17 @@ appropriate
 * DONE make rails-find-action follow forms and link_to[_remote]
 
 see [[file:rinari.el::defun%20rinari%20alist%20from%20view][rinari-alist-from-view]]
+
+* TODO inf-ruby enhancement
+
+found an example of an error that the
+`inferior-ruby-error-regexp-alist' in inf-ruby.el doesn't match
+
+this was the error line
+
+:SNIP:
+SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
+:END:
 
 * PARTIAL ruby-compilation enhancement
   

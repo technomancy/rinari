@@ -176,7 +176,8 @@ from your conf/database.sql file."
   "Run script/server.  Dump output to a compilation buffer
 allowing jumping between errors and source code."
   (interactive)
-  (ruby-run-w/compilation (concat (rinari-root) "/script/server")))
+  (let ((default-directory (rinari-root)))
+    (ruby-run-w/compilation "script/server")))
 
 (defun rinari-browse-url ()
   "Browse the url of the current view, controller, test, or model

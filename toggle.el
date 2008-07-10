@@ -61,6 +61,7 @@
 ;; 1.0 2006-03-22 Birfday.
 
 (require 'cl)
+(require 'which-func)
 
 (defcustom toggle-which-function-command
   'which-function

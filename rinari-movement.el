@@ -42,16 +42,17 @@
      (replace-regexp-in-string "\*" "\\(.*\\)" (cdr pair) nil t)) rinari-subdirs)
   "Regexps built from `rinari-subdirs'")
 
-;; (defmacro rinari-completing-read (prompt collection)
-;;   "If `ido-completing-read' is defined then use it for completion."
-;;   `(if (functionp 'ido-completing-read)
-;;        (ido-completing-read ,prompt ,collection)
-;;      (completing-read ,prompt ,collection)))
-
 (defmacro rinari-find-file ()
-  "If `ido-find-file' is defined then use it."
-  `(if (functionp 'ido-find-file) (ido-find-file)
+  "If `ido-find-file' is defined then use it." ;; (functionp 'ido-find-file)
+  `(if (or (equal 'both ido-mode) (equal 'file ido-mode))
+       (ido-find-file)
      (call-interactively 'rinari-find-file-helper)))
+
+(defmacro rinari-completing-read (prompt collection)
+  "If `ido-mode' is defined then use it for completion."
+  `(if (or (equal 'both ido-mode) (equal 'file ido-mode))
+       (ido-completing-read ,prompt ,collection)
+     (completing-read ,prompt ,collection)))
 
 (defun rinari-find-file-helper (&optional file)
   (interactive "fFile: ")
@@ -150,9 +151,11 @@ the hash at `point', then return (CONTROLLER . ACTION)"
     (cons controller action)))
 
 (defun rinari-which-render (renders)
-  (let ((path (completing-read "Follow: "
-			       (mapcar (lambda (lis)
-					 (rinari-join-string (list (car lis) (cdr lis)) "/")) renders))))
+  (let ((path (rinari-completing-read
+	       "Follow: "
+	       (mapcar (lambda (lis)
+			 (rinari-join-string (list (car lis) (cdr lis)) "/"))
+		       renders))))
     (string-match "\\(.*\\)/\\(.*\\)" path)
     (cons (match-string 1 path) (match-string 2 path))))
 
