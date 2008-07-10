@@ -42,22 +42,32 @@
      (replace-regexp-in-string "\*" "\\(.*\\)" (cdr pair) nil t)) rinari-subdirs)
   "Regexps built from `rinari-subdirs'")
 
-(defmacro rinari-completing-read (prompt collection)
-  "If `ido-completing-read' is defined then use it for completion."
-  `(if (functionp 'ido-completing-read)
-       (ido-completing-read ,prompt ,collection)
-     (completing-read ,prompt ,collection)))
+;; (defmacro rinari-completing-read (prompt collection)
+;;   "If `ido-completing-read' is defined then use it for completion."
+;;   `(if (functionp 'ido-completing-read)
+;;        (ido-completing-read ,prompt ,collection)
+;;      (completing-read ,prompt ,collection)))
 
 (defmacro rinari-find-file ()
   "If `ido-find-file' is defined then use it."
-  `(if (functionp 'ido-find-file) (ido-find-file) (find-file)))
+  `(if (functionp 'ido-find-file) (ido-find-file)
+     (call-interactively 'rinari-find-file-helper)))
+
+(defun rinari-find-file-helper (&optional file)
+  (interactive "fFile: ")
+  (find-file file))
+
+(defun rinari-join-string (lst &optional seperator)
+  "The reverse of `split-string'"
+  (interactive)
+  (mapconcat 'identity lst seperator))
 
 (defun rinari-open (type name)
   (let ((path (substring (concat (rinari-root)
 				 (format (replace-regexp-in-string
 					  "\*" "%s" (cdr (assoc type rinari-subdirs)) nil t)
 					 name)) 0 -1)))
-    (and (file-exists-p path) (rinari-find-file path))))
+    (and (file-exists-p path) (find-file path))))
 
 (defun rinari-whats-my-type ()
   "Return what section of the rails project is currently being visited."
@@ -109,12 +119,12 @@ current buffer."
 	 (controllers (pluralize-string controller))
 	 (action (cdr path)))
     (case view-or-controller
-      (:view (or (rinari-open :view (join-string (list controller action) "/"))
-		 (rinari-open :view (join-string (list controllers action) "/"))
-		 (rinari-open :view (join-string (list controller action) "/_"))
-		 (rinari-open :view (join-string (list controllers action) "/_"))
+      (:view (or (rinari-open :view (rinari-join-string (list controller action) "/"))
+		 (rinari-open :view (rinari-join-string (list controllers action) "/"))
+		 (rinari-open :view (rinari-join-string (list controller action) "/_"))
+		 (rinari-open :view (rinari-join-string (list controllers action) "/_"))
 		 (let ((default-directory (concat (rinari-root) "app/views/")))
-		   (call-interactively 'rinari-rinari-find-file))))
+		   (rinari-find-file))))
       (:controller (rinari-find-action-in-controller controller action)))))
 
 (defun rinari-find-action-in-controller (controller action)
@@ -140,10 +150,9 @@ the hash at `point', then return (CONTROLLER . ACTION)"
     (cons controller action)))
 
 (defun rinari-which-render (renders)
-  (let ((path (rinari-completing-read
-	       "Follow: "
-	       (mapcar (lambda (lis)
-			 (join-string (list (car lis) (cdr lis)) "/")) renders))))
+  (let ((path (completing-read "Follow: "
+			       (mapcar (lambda (lis)
+					 (rinari-join-string (list (car lis) (cdr lis)) "/")) renders))))
     (string-match "\\(.*\\)/\\(.*\\)" path)
     (cons (match-string 1 path) (match-string 2 path))))
 
