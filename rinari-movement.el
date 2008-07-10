@@ -39,16 +39,25 @@
 (defvar rinari-subdir-regexps
   (mapcar
    (lambda (pair)
-     (replace-in-string (cdr pair) "\*" "\\(.*\\)")) rinari-subdirs)
+     (replace-regexp-in-string "\*" "\\(.*\\)" (cdr pair) nil t)) rinari-subdirs)
   "Regexps built from `rinari-subdirs'")
+
+(defmacro rinari-completing-read (prompt collection)
+  "If `ido-completing-read' is defined then use it for completion."
+  `(if (functionp 'ido-completing-read)
+       (ido-completing-read ,prompt ,collection)
+     (completing-read ,prompt ,collection)))
+
+(defmacro rinari-find-file ()
+  "If `ido-find-file' is defined then use it."
+  `(if (functionp 'ido-find-file) (ido-find-file) (find-file)))
 
 (defun rinari-open (type name)
   (let ((path (substring (concat (rinari-root)
-				 (format (replace-in-string
-					  (cdr (assoc type rinari-subdirs))
-					  "\*" "%s")
+				 (format (replace-regexp-in-string
+					  "\*" "%s" (cdr (assoc type rinari-subdirs)) nil t)
 					 name)) 0 -1)))
-    (and (file-exists-p path) (find-file path))))
+    (and (file-exists-p path) (rinari-find-file path))))
 
 (defun rinari-whats-my-type ()
   "Return what section of the rails project is currently being visited."
@@ -56,7 +65,7 @@
   (let ((path (or (buffer-file-name) "")) group)
     (mapcar
      (lambda (pair)
-       (if (string-match (replace-in-string (cdr pair) "\*" ".*") path)
+       (if (string-match (replace-regexp-in-string "\*" ".*" (cdr pair) nil t) path)
 	   (setf group (car pair))))
      rinari-subdirs) group))
 
@@ -73,9 +82,6 @@ current buffer."
     ;; take only before first / in object
     (if (and object (string-match "^\\(.*?\\)/" object)) (match-string 1 object)
       object)))
-
-(defun rinari-find-file-helper (&optional file)
-  (interactive "fFile: ") (find-file file))
 
 ;;--------------------------------------------------------------------------------
 ;; Follow renders, redirects, link_to's, and information in ruby keyword arguments
@@ -108,7 +114,7 @@ current buffer."
 		 (rinari-open :view (join-string (list controller action) "/_"))
 		 (rinari-open :view (join-string (list controllers action) "/_"))
 		 (let ((default-directory (concat (rinari-root) "app/views/")))
-		   (call-interactively 'rinari-find-file-helper))))
+		   (call-interactively 'rinari-rinari-find-file))))
       (:controller (rinari-find-action-in-controller controller action)))))
 
 (defun rinari-find-action-in-controller (controller action)
@@ -134,7 +140,7 @@ the hash at `point', then return (CONTROLLER . ACTION)"
     (cons controller action)))
 
 (defun rinari-which-render (renders)
-  (let ((path (completing-read
+  (let ((path (rinari-completing-read
 	       "Follow: "
 	       (mapcar (lambda (lis)
 			 (join-string (list (car lis) (cdr lis)) "/")) renders))))
@@ -182,7 +188,7 @@ renders and redirects to find the final controller or view."
 	     (or (rinari-open :model (singularize-string obj))
 		 (rinari-open :model (pluralize-string obj)))
 	   (let ((default-directory (concat (rinari-root) "app/models/")))
-	     (call-interactively 'rinari-find-file-helper)))))))
+	     (rinari-find-file)))))))
 
 (defun rinari-find-test ()
   "Go to the most logical test given the current location."
@@ -192,7 +198,7 @@ renders and redirects to find the final controller or view."
     (:controller (toggle-buffer))
     (:view (rinari-find-type :controller) (toggle-buffer))
     (t (let ((default-directory (concat (rinari-root) "test/")))
-	 (call-interactively 'rinari-find-file-helper)))))
+	 (rinari-find-file)))))
 
 (defun rinari-find-controller ()
   "Go to the most logical controller given the current location."
@@ -213,7 +219,7 @@ renders and redirects to find the final controller or view."
 	     (or (rinari-open :controller (pluralize-string obj))
 		 (rinari-open :controller (singularize-string obj)))
 	   (let ((default-directory (concat (rinari-root) "app/controllers/")))
-	     (call-interactively 'rinari-find-file-helper)))))))
+	     (rinari-find-file)))))))
 
 (defun rinari-find-view ()
   "Go to the most logical view given the current location."
@@ -225,7 +231,7 @@ renders and redirects to find the final controller or view."
      (let* ((model (rinari-whats-my-object))
 	    (default-directory (concat (rinari-root) "app/views/"
 				       (pluralize-string model))))
-       (call-interactively 'rinari-find-file-helper)))
+       (rinari-find-file)))
     (:controller 
      (rinari-find-controller-and-action
       :view (rinari-whats-my-object)
@@ -237,7 +243,7 @@ renders and redirects to find the final controller or view."
       (let ((file (file-name-nondirectory (buffer-file-name))))
 	(and (string-match "\\(.*\\)\.rhtml" file) (match-string 1 file)))))
     (t (let ((default-directory (concat (rinari-root) "app/views/")))
-	 (call-interactively 'rinari-find-file-helper)))))
+	 (rinari-find-file)))))
 
 (provide 'rinari-movement)
 ;;; rinari-movement.el ends here
