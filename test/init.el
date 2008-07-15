@@ -5,20 +5,19 @@
 (require 'elunit)
 
 ;; testing rinari-movement
-(defsuite rinari-movement-suite nil
-  ;; :setup-hook (lambda () )
-  ;; 
-  :teardown-hook (lambda () (message "done testing"))
-  )
+(defsuite rinari-suite nil
+  :setup-hook (lambda () )
+  :teardown-hook (lambda ()
+		   (switch-to-buffer "*Messages*")
+		   (message "test completed")))
 
-(deftest rinari-move-test rinari-movement-suite
+(deftest rinari-move-test rinari-suite
   ;; test moving from everywhere to everywhere
   (save-excursion
     (let ((max-lisp-eval-depth 2000)
 	  (rails-root (format "%s" (concat (file-name-directory
 					    (or load-file-name buffer-file-name))
 					   "rails-app/"))))
-      (message rails-root)
       (flet ((here-to-here (start func end)
 			   (let ((default-directory rails-root))
 			     ;; go to start
@@ -42,7 +41,43 @@
 		      '("test/functional/units_controller_test.rb" . 152))
 	(here-to-here '("app/controllers/units_controller.rb" . 61)
 		      'rinari-find-view
-		      '("app/views/units/fall.rhtml" . 1))))))
+		      '("app/views/units/fall.html.erb" . 1))))))
+
+(deftest rinari-console-test rinari-suite
+  ;; testing ability to launch console, server, and a test
+  (save-excursion
+    (let ((default-directory (format "%s" (concat (file-name-directory
+					    (or load-file-name buffer-file-name))
+					   "rails-app/"))))
+      (rinari-console)
+      (assert-equal (buffer-name) "*ruby*")
+      (assert-that (get-buffer-process (current-buffer)))
+      (kill-buffer (current-buffer)))))
+
+(deftest rinari-server-test rinari-suite
+  ;; testing ability to launch console, server, and a test
+  (save-excursion
+    (let ((default-directory (format "%s" (concat (file-name-directory
+					    (or load-file-name buffer-file-name))
+					   "rails-app/"))))
+      (rinari-web-server)
+      (assert-equal (buffer-name) "*server*")
+      (assert-that (get-buffer-process (current-buffer)))
+      (kill-buffer (current-buffer)))))
+
+(deftest rinari-test-test rinari-suite
+  ;; testing ability to launch console, server, and a test
+  (save-excursion
+    (let ((default-directory (format "%s" (concat (file-name-directory
+					    (or load-file-name buffer-file-name))
+					   "rails-app/"))))
+      (find-file "app/controllers/units_controller.rb")
+      (rinari-test)
+      (assert-equal (buffer-name) "*units_controller_test.rb*")
+      (assert-equal major-mode 'comint-mode)
+      (kill-buffer "*units_controller_test.rb*")
+      (kill-buffer "units_controller_test.rb")
+      (kill-buffer "units_controller.rb"))))
 
 ;; (elunit-run-suite (elunit-get-suite 'rinari-movement-suite))
-(elunit "rinari-movement-suite")
+(elunit "rinari-suite")

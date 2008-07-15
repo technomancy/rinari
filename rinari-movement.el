@@ -32,6 +32,7 @@
   '((:model . "app/models/*\.rb$")
     (:controller . "app/controllers/*_controller\.rb$")
     (:view . "app/views/*.rhtml$")
+    (:view_two . "app/views/*.html.erb$")
     (:functional . "test/functional/*_controller_test\.rb$")
     (:unit . "test/unit/*_test\.rb$"))
   "Subdirectories of a Rails projects and their contents")
@@ -111,7 +112,8 @@ current buffer."
 	  (match-string 1 path))
      ;; action
      (or (and method (string-match "#\\(.*\\)" method) (match-string 1 method))
-	 (and (string-match "app/views/.*/_?\\(.*?\\)\.rhtml" path)
+	 (and (or (string-match "app/views/.*/_?\\(.*?\\)\.rhtml" path)
+		  (string-match "app/views/.*/_?\\(.*?\\)\.html.erb" path))
 	      (match-string 1 path))))))
 
 (defun rinari-find-controller-and-action (view-or-controller controller action)
@@ -121,9 +123,13 @@ current buffer."
 	 (action (cdr path)))
     (case view-or-controller
       (:view (or (rinari-open :view (rinari-join-string (list controller action) "/"))
+		 (rinari-open :view_two (rinari-join-string (list controller action) "/"))
 		 (rinari-open :view (rinari-join-string (list controllers action) "/"))
+		 (rinari-open :view_two (rinari-join-string (list controllers action) "/"))
 		 (rinari-open :view (rinari-join-string (list controller action) "/_"))
+		 (rinari-open :view_two (rinari-join-string (list controller action) "/_"))
 		 (rinari-open :view (rinari-join-string (list controllers action) "/_"))
+		 (rinari-open :view_two (rinari-join-string (list controllers action) "/_"))
 		 (let ((default-directory (concat (rinari-root) "app/views/")))
 		   (rinari-find-file))))
       (:controller (rinari-find-action-in-controller controller action)))))
@@ -208,7 +214,7 @@ renders and redirects to find the final controller or view."
   (case (rinari-whats-my-type)
     (:model      (toggle-buffer))
     (:controller (toggle-buffer))
-    (:view (rinari-find-type :controller) (toggle-buffer))
+    ((:view :view_two) (rinari-find-type :controller) (toggle-buffer))
     (t (let ((default-directory (concat (rinari-root) "test/")))
 	 (rinari-find-file)))))
 
@@ -221,11 +227,11 @@ renders and redirects to find the final controller or view."
 	    (let ((method (ruby-add-log-current-method)))
 	      (and (string-match "#\\(.*\\)" method)
 		   (match-string 1 method)))))
-    (:view (rinari-find-controller-and-action
+    ((:view :view_two) (rinari-find-controller-and-action
 	    :controller (rinari-whats-my-object)
 	    (let ((file (file-name-nondirectory (buffer-file-name))))
-	    (and (match-string "\\(.*\\)\.rhtml" file)
-		 (string-match 1 file)))))
+	    (and (or (string-match "\\(.*\\)\.rhtml" file) (string-match "\\(.*\\)\.html.erb" file))
+		 (match-string 1 file)))))
     (t (let ((obj (rinari-whats-my-object)))
 	 (if obj
 	     (or (rinari-open :controller (pluralize-string obj))
@@ -249,13 +255,32 @@ renders and redirects to find the final controller or view."
       :view (rinari-whats-my-object)
       (let ((method (ruby-add-log-current-method)))
 	(and (string-match "#\\(.*\\)" method) (match-string 1 method)))))
-    (:view
+    ((:view :view_two)
      (rinari-find-controller-and-action
       :view (rinari-whats-my-object)
       (let ((file (file-name-nondirectory (buffer-file-name))))
-	(and (string-match "\\(.*\\)\.rhtml" file) (match-string 1 file)))))
+	(and (or (string-match "\\(.*\\)\.rhtml" file) (string-match "\\(.*\\)\.html.erb" file))
+	     (match-string 1 file)))))
     (t (let ((default-directory (concat (rinari-root) "app/views/")))
 	 (rinari-find-file)))))
+
+;;--------------------------------------------------------------------------------
+;; simple movement functions
+(defvar rinari-simple-places
+  '(("migration" . "/db/migrate/") ("environment" . "/config/environments/")
+    ("javascript" . "/public/javascripts/") ("stylesheet" . "/public/stylesheets/"))
+  "Rails directories and the key to find them")
+
+(defmacro rinari-find-simple-place (name path)
+  `(defun ,(intern (format "rinari-find-%s" name)) ()
+     ,(format "Find a %s in the current Rails project" name)
+     (interactive)
+     (let ((default-directory (concat (rinari-root) ,path)))
+       (rinari-find-file))))
+
+(mapcar (lambda (pair)
+	  (eval (list 'rinari-find-simple-place (car pair) (cdr pair))))
+	rinari-simple-places)
 
 (provide 'rinari-movement)
 ;;; rinari-movement.el ends here

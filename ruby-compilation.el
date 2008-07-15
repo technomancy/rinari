@@ -81,8 +81,8 @@
 		 (let ((orphan-proc (get-buffer-process (buffer-name))))
 		   (if orphan-proc
 		       (kill-process orphan-proc)))))
-	  (compilation-minor-mode)
-	  (ruby-compilation-minor-mode))))
+	  (compilation-minor-mode t)
+	  (ruby-compilation-minor-mode t))))
     comp-buffer-name))
 
 (defun ruby-compilation-insertion-filter (proc string)

@@ -8,8 +8,29 @@ List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
-* TODO full test coverage
-* TODO rinari movement
+* TODO bundles
+** DONE rhtml (from original rinari)
+see
+- [[http://rinari.rubyforge.org/rhtml_002dMode.html#rhtml_002dMode]]
+- [[http://github.com/eschulte/rhtml/tree/master]]
+
+** rdebug
+- [[http://bashdb.sourceforge.net/ruby-debug.html#SEC_Top]]
+** snippets
+- using [[http://code.google.com/p/yasnippet/][yasnippets]]
+- find collection of rails snippets
+- configure to work with the three different rhtml options
+  - add html and rb snippets to rhtml
+
+* PARTIAL full test coverage [1/2]
+- [X] movement tests
+- [-] compilation tests
+  - [X] console
+  - [X] web-server
+  - [X] test
+  - [ ] sql
+
+* PARTIAL rinari movement [3/4]
 
 From anywhere, get to the related model/controller/test/view
 
@@ -24,7 +45,34 @@ where can you be?
 pending...
 - [X] still need to work on movement from OTHER places
 - [X] look at a better keybinding setup
-- [ ] rails2 style view names
+- [X] rails2 style view names
+- [ ] refactor code: can be smaller, cleaner, and make better use of
+      `rinari-subdirs' type alist
+
+* PARTIAL inf-ruby enhancement
+
+found an example of an error that the
+`inferior-ruby-error-regexp-alist' in inf-ruby.el doesn't match
+
+this was the error line
+
+:SNIP:
+SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
+:END:
+
+* PARTIAL ruby-compilation enhancement
+  
+found a line which didn't match the error-regexp-alist
+
+:SNIP:
+test_create(QueriesControllerTest) [/home/eschulte/work/arf/arf/test/functional/queries_controller_test.rb:60]:
+:END:
+
+and another
+
+:SNIP:
+    /var/lib/gems/1.8/gems/mongrel-1.1.3/bin/mongrel_rails:281
+:END:
 
 * DONE write up some info documentation for Rinari
 
@@ -134,31 +182,6 @@ appropriate
 * DONE make rails-find-action follow forms and link_to[_remote]
 
 see [[file:rinari.el::defun%20rinari%20alist%20from%20view][rinari-alist-from-view]]
-
-* TODO inf-ruby enhancement
-
-found an example of an error that the
-`inferior-ruby-error-regexp-alist' in inf-ruby.el doesn't match
-
-this was the error line
-
-:SNIP:
-SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpec
-:END:
-
-* PARTIAL ruby-compilation enhancement
-  
-found a line which didn't match the error-regexp-alist
-
-:SNIP:
-test_create(QueriesControllerTest) [/home/eschulte/work/arf/arf/test/functional/queries_controller_test.rb:60]:
-:END:
-
-and another
-
-:SNIP:
-    /var/lib/gems/1.8/gems/mongrel-1.1.3/bin/mongrel_rails:281
-:END:
 
 * DONE rinari-rake uses ruby-compilation
 * DONE remove rails-script add ruby-compilation

@@ -221,7 +221,7 @@ to continue it."
   ;;(scheme-mode-variables)
   (ruby-mode-variables)
   (setq major-mode 'inferior-ruby-mode)
-  (setq mode-name "Inferior Ruby")
+  (setq mode-name "Inf-Ruby")
   (setq mode-line-process '(":%s"))
   (use-local-map inferior-ruby-mode-map)
   (setq comint-input-filter (function ruby-input-filter))

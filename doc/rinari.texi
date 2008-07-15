@@ -206,6 +206,7 @@ your downloaded nxml directory).
  indent-region-mode t
  rng-nxml-auto-validate-flag nil
  nxml-degraded t)
+(add-to-list 'auto-mode-alist '("\\.html\\.erb\\'" . eruby-nxhtml-mumamo))
 @end lisp
 
 @node MuMaMo-Mode, , nXhtml-Mode, Rhtml Setup
@@ -229,6 +230,8 @@ directory).
 (add-to-list 'load-path "~/path/to/your/elisp/nxml-directory/util")
 (require 'mumamo-fun)
 (setq mumamo-chunk-coloring 'submode-colored)
+(add-to-list 'auto-mode-alist '("\\.rhtml\\'" . eruby-html-mumamo))
+(add-to-list 'auto-mode-alist '("\\.html\\.erb\\'" . eruby-html-mumamo))
 @end lisp
 
 @node Optional Setup, Navigation, Rhtml Setup, Install
@@ -408,6 +411,8 @@ emacs .init file
 ;;; rhtml-mode
 (add-to-list 'load-path "~/path/to/your/elisp/rhtml")
 (require 'rhtml-mode)
+(add-hook 'rhtml-mode-hook
+	  (lambda () (rinari-launch)))
 @end lisp
 
 @bye

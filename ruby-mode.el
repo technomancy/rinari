@@ -58,17 +58,27 @@
   "Regexp to match closing of a block.")
 
 (defconst ruby-here-doc-beg-re
-  "<<\\(-\\)?\\(\\([a-zA-Z0-9_]+\\)\\|[\"]\\([^\"]+\\)[\"]\\|[']\\([^']+\\)[']\\)"
+  "\\(<\\)<\\(-\\)?\\(\\([a-zA-Z0-9_]+\\)\\|[\"]\\([^\"]+\\)[\"]\\|[']\\([^']+\\)[']\\)"
   "Regexp to match heredocs.")
+
+(defconst ruby-here-doc-end-re
+  "^\\([ \t]+\\)?\\(.*\\)\\(.\\)$")
 
 (defun ruby-here-doc-end-match ()
   "Return a regexp to find the end of the last matched heredoc."
   (concat "^"
-	  (if (match-string 1) "[ \t]*" nil)
+	  (if (match-string 2) "[ \t]*" nil)
 	  (regexp-quote
-	   (or (match-string 3)
-	       (match-string 4)
-	       (match-string 5)))))
+	   (or (match-string 4)
+	       (match-string 5)
+	       (match-string 6)))))
+
+(defun ruby-here-doc-beg-match ()
+  (let ((contents (regexp-quote (concat (match-string 2) (match-string 3)))))
+    (concat "<<"
+            (if (match-string 1)
+                (concat "\\(?:-\\(?1:[\"']\\)\\|\\(?1:[\"']\\)" (match-string 1) "\\)" contents "\\1")
+              (concat "-?\\([\"']\\|\\)" contents "\\1")))))
 
 (defconst ruby-delimiter
   (concat "[?$/%(){}#\"'`.:]\\|<<\\|\\[\\|\\]\\|\\<\\("
@@ -182,8 +192,8 @@ Also ignores spaces after parenthesis when 'space."
 
 (defun ruby-imenu-create-index-in-block (prefix beg end)
   "Create an imenu index of methods inside a block."
-  (let ((index-alist '()) (case-fold-search nil)
-	name next pos decl sing)
+  (let ((index-alist '())
+        name next pos decl sing)
     (goto-char beg)
     (while (re-search-forward "^\\s *\\(\\(class\\>\\(\\s *<<\\)?\\|module\\>\\)\\s *\\([^\(<\n ]+\\)\\|\\(def\\|alias\\)\\>\\s *\\([^\(\n ]+\\)\\)" end t)
       (setq sing (match-beginning 3))
@@ -235,6 +245,7 @@ Also ignores spaces after parenthesis when 'space."
   "Set up initial local variables for ruby-mode."
   (set-syntax-table ruby-mode-syntax-table)
   (setq local-abbrev-table ruby-mode-abbrev-table)
+  (setq case-fold-search nil)
   (setq indent-tabs-mode ruby-indent-tabs-mode)
   (set (make-local-variable 'indent-line-function) 'ruby-indent-line)
   (set (make-local-variable 'require-final-newline) t)
@@ -243,6 +254,8 @@ Also ignores spaces after parenthesis when 'space."
   (set (make-variable-buffer-local 'comment-column) ruby-comment-column)
   (set (make-variable-buffer-local 'comment-start-skip) "#+ *")
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
+  (make-local-variable 'parse-sexp-lookup-properties)
+  (setq parse-sexp-lookup-properties t)
   (set (make-local-variable 'paragraph-start) (concat "$\\|" page-delimiter))
   (set (make-local-variable 'paragraph-separate) paragraph-start)
   (set (make-local-variable 'paragraph-ignore-fill-prefix) t))
@@ -655,7 +668,6 @@ The variable ruby-indent-level controls the amount of indentation.
   (save-excursion
     (beginning-of-line)
     (let ((indent-point (point))
-	  (case-fold-search nil)
 	  state bol eol begin op-end
 	  (paren (progn (skip-syntax-forward " ")
 			(and (char-after) (matching-paren (char-after)))))
@@ -1116,7 +1128,7 @@ balanced expression is found."
 
 (defconst ruby-font-lock-syntactic-keywords
   ;; TODO: doc
-  '(;; #{ }, #$hoge, #@foo are not comments
+  `(;; #{ }, #$hoge, #@foo are not comments
     ("\\(#\\)[{$@]" 1 (1 . nil))
     ;; the last $', $", $` in the respective string is not variable
     ;; the last ?', ?", ?` in the respective string is not ascii code
@@ -1131,7 +1143,63 @@ balanced expression is found."
      (4 (7 . ?/))
      (6 (7 . ?/)))
     ("^\\(=\\)begin\\(\\s \\|$\\)" 1 (7 . nil))
-    ("^\\(=\\)end\\(\\s \\|$\\)" 1 (7 . nil))))
+    ("^\\(=\\)end\\(\\s \\|$\\)" 1 (7 . nil))
+    (,(concat ruby-here-doc-beg-re ".*\\(?100:\n\\)")
+     100 (ruby-here-doc-beg-syntax))
+    (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax))))
+
+
+  (defun ruby-in-here-doc-p ()
+    (save-excursion
+      (let ((old-point (point)))
+        (beginning-of-line)
+        (and (re-search-backward ruby-here-doc-beg-re nil t)
+             (not (ruby-here-doc-find-end old-point))))))
+
+  (defun ruby-here-doc-find-end (&optional limit)
+    "Expects the point to be on a line with one or more heredoc
+opener. Returns the buffer position at which all heredocs on the
+line are terminated, or nil if they aren't terminated before the
+buffer position `limit' or the end of the buffer."
+    (save-excursion
+      (beginning-of-line)
+      (catch 'done
+        (let ((eol (save-excursion (end-of-line) (point)))
+              ;; Fake match data such that (match-end 0) is at eol
+              (end-match-data (progn (looking-at ".*$") (match-data)))
+              beg-match-data end-re)
+          (while (re-search-forward ruby-here-doc-beg-re eol t)
+            (setq beg-match-data (match-data))
+            (setq end-re (ruby-here-doc-end-match))
+
+            (set-match-data end-match-data)
+            (goto-char (match-end 0))
+            (unless (re-search-forward end-re limit t) (throw 'done nil))
+            (setq end-match-data (match-data))
+
+            (set-match-data beg-match-data)
+            (goto-char (match-end 0)))
+          (set-match-data end-match-data)
+          (goto-char (match-end 0))
+          (point)))))
+
+  (defun ruby-here-doc-beg-syntax ()
+    (save-excursion
+      (goto-char (match-beginning 0))
+      (unless (ruby-in-here-doc-p) (string-to-syntax "|"))))
+
+  (defun ruby-here-doc-end-syntax ()
+    (save-excursion
+      (goto-char (match-beginning 0))
+      (let ((old-point (point))
+            (beg-exists (re-search-backward (ruby-here-doc-beg-match) nil t))
+            (eol (save-excursion (end-of-line) (point))))
+        (if (and beg-exists ; If there is a heredoc that matches this line...
+                 (null (syntax-ppss-context (syntax-ppss))) ; And that's not inside a heredoc/string/comment...
+                 (progn (goto-char (match-end 0)) ; And it's the last heredoc on its line...
+                        (not (re-search-forward ruby-here-doc-beg-re eol t)))
+                 (not (ruby-here-doc-find-end old-point))) ; And it doesn't end before this point...
+            (string-to-syntax "|")))))
 
 (if (featurep 'xemacs)
     (put 'ruby-mode 'font-lock-defaults
@@ -1175,37 +1243,9 @@ balanced expression is found."
     (modify-syntax-entry ?_ "w" tbl)
     tbl))
 
-(defun ruby-font-lock-here-docs (limit)
-  ;; TODO: doc
-  (if (re-search-forward ruby-here-doc-beg-re limit t)
-      (let (beg)
-	(beginning-of-line)
-	(forward-line)
-	(setq beg (point))
-	(if (re-search-forward (ruby-here-doc-end-match) nil t)
-	    (progn
-	      (set-match-data (list beg (point)))
-	      t)))))
 
-(defun ruby-font-lock-maybe-here-docs (limit)
-  ;; TODO: doc
-  (let (beg)
-    (save-excursion
-      (if (re-search-backward ruby-here-doc-beg-re nil t)
-	  (progn
-	    (beginning-of-line)
-	    (forward-line)
-	    (setq beg (point)))))
-    (if (and beg
-	     (let ((end-match (ruby-here-doc-end-match)))
-	       (and (not (re-search-backward end-match beg t))
-		    (re-search-forward end-match nil t))))
-	(progn
-	  (set-match-data (list beg (point)))
-	  t)
-      nil)))
 
-(defvar ruby-font-lock-keywords
+  (defconst ruby-font-lock-keywords
   (list
    ;; functions
    '("^\\s *def\\s +\\([^( \t\n]+\\)"
@@ -1254,6 +1294,8 @@ balanced expression is found."
 	   "\\|")
 	  "\\)\\>\\)")
 	 2)
+   ;; here-doc beginnings
+   (list ruby-here-doc-beg-re 0 'font-lock-string-face)
    ;; variables
    '("\\(^\\|[^_:.@$]\\|\\.\\.\\)\\b\\(nil\\|self\\|true\\|false\\)\\>"
      2 font-lock-variable-name-face)
@@ -1267,13 +1309,6 @@ balanced expression is found."
      0 font-lock-comment-face t)
    '(ruby-font-lock-maybe-docs
      0 font-lock-comment-face t)
-   ;; "here" document
-   '(ruby-font-lock-here-docs
-     0 font-lock-string-face t)
-   '(ruby-font-lock-maybe-here-docs
-     0 font-lock-string-face t)
-   `(,ruby-here-doc-beg-re
-     0 font-lock-string-face t)
    ;; general delimited string
    '("\\(^\\|[[ \t\n<+(,=]\\)\\(%[xrqQwW]?\\([^<[{(a-zA-Z0-9 \n]\\)[^\n\\\\]*\\(\\\\.[^\n\\\\]*\\)*\\(\\3\\)\\)"
      (2 font-lock-string-face))

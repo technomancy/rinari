@@ -210,7 +210,7 @@ With optional prefix argument just run `rgrep'."
   (grep-compute-defaults)
   (if arg (call-interactively 'rgrep)
     (funcall 'rgrep (read-from-minibuffer "search for: ")
-	     "*.rb *.rhtml *.yml" (rinari-root))))
+	     "*.rb *.rhtml *.yml *.erb" (rinari-root))))
 
 ;;--------------------------------------------------------------------
 ;; minor mode and keymaps
@@ -221,12 +221,15 @@ With optional prefix argument just run `rgrep'."
   "Key map for Rinari minor mode.")
 
 (defvar rinari-minor-mode-keybindings
-  '(("o" . 'toggle-buffer) ("s" . 'rinari-sql)
-    ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
-    ("r" . 'rinari-rake) ("c" . 'rinari-console) ("b" . 'rinari-browse-url)
-    ("w" . 'rinari-web-server) ("g" . 'rinari-rgrep)
-    ("fc" . 'rinari-find-controller) ("ft" . 'rinari-find-test)
-    ("fv" . 'rinari-find-view) ("fm" . 'rinari-find-model))
+  '(("o"  . 'toggle-buffer)              ("s" . 'rinari-sql)
+    ("e"  . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
+    ("r"  . 'rinari-rake)                ("c" . 'rinari-console)
+    ("w"  . 'rinari-web-server)          ("g" . 'rinari-rgrep)
+    ("b" . 'rinari-browse-url)
+    ("fc" . 'rinari-find-controller)     ("ft" . 'rinari-find-test)
+    ("fv" . 'rinari-find-view)           ("fm" . 'rinari-find-model)
+    ("fi" . 'rinari-find-migration)      ("fe" . 'rinari-find-environment)
+    ("fj" . 'rinari-find-javascript)     ("fs" . 'rinari-find-stylesheet))
   "alist mapping of keys to functions in `rinari-minor-mode'")
 
 (mapcar (lambda (el)
