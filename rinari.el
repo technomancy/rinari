@@ -58,6 +58,10 @@
   'browse-url
   "`browse-url' function used by `rinari-browse-view'.")
 
+(defcustom rinari-tags-file-name
+  "TAGS"
+  "Path to your TAGS file inside of your rails project.  See `tags-file-name'.")
+
 (defadvice find-file-in-project (around find-file-in-rinari-project activate)
   "Wrap `find-file-in-project' to use `rinari-root' as the base of
   the project."
@@ -256,9 +260,12 @@ otherwise turn `rinari-minor-mode' off if it is on."
   (setq toggle-mappings (toggle-style toggle-mapping-style))
   (setq toggle-which-function-command 'ruby-add-log-current-method)
   (setq toggle-method-format "def %s")
-  (if (rinari-root)
-      (unless rinari-minor-mode (rinari-minor-mode t))
-      (if rinari-minor-mode (rinari-minor-mode))))
+  (let* ((root (rinari-root)) (r-tags-path (concat root rinari-tags-file-name)))
+    (if root
+	(progn
+	  (if (file-exists-p r-tags-path) (setq tags-file-name r-tags-path))
+	  (unless rinari-minor-mode (rinari-minor-mode t)))
+      (if rinari-minor-mode (rinari-minor-mode)))))
 
 (add-hook 'ruby-mode-hook
 	  (lambda () (rinari-launch)))

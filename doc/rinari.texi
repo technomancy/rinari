@@ -1,7 +1,7 @@
 \input texinfo
 @c %**start of header
 @setfilename doc/rinari.info
-@settitle Rinari: Ruby on Rails Minor Mode
+@settitle Rinari: Ruby on Rails Minor Mode for Emacs
 
 @set DATE July 2008
 
@@ -20,11 +20,12 @@
 @finalout
 
 @copying
-This manual is for Rinari.
-(Modeled off of the very fine org-mode info documentation.)
+This manual is for Rinari. A Ruby on Rails Minor Mode for Emacs.
 
 Copyright @copyright{} 2008 Eric Schulte, 2006 - 2007 Phil Hagelberg,
 Forrest Chang, Ryan Davis, Paul Stickne, and others
+
+(This manual is modeled off of the very fine org-mode info documentation.)
 
 @end copying
 
@@ -36,7 +37,7 @@ Forrest Chang, Ryan Davis, Paul Stickne, and others
 
 @c The following two commands start the copyright page.
 @page
-@vskip 0pt plus 1filll
+@vskip 0pt plus 1fill
 @insertcopying
 @end titlepage
 
@@ -79,7 +80,7 @@ Forrest Chang, Ryan Davis, Paul Stickne, and others
 
 @b{R}inari @b{I}s @b{N}ot @b{A} @b{R}uby @b{I}DE.
 
-Well, ok it kind of is. Rinari is a set of Emacs Lisp functions aimed
+Well, OK it kind of is. Rinari is a set of Emacs Lisp functions aimed
 towards making Emacs into a top-notch Ruby on Rails development
 environment.
 
@@ -259,7 +260,7 @@ rake doc:make_html
 
 While ido-mode
 @uref{http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings} is
-not strictly required it is very helpfull in combination with many of
+not strictly required it is very helpful in combination with many of
 Rinari functions.  For more information about enabling ido-mode see the
 link below, or to just go ahead and try it out add the following to your
 emacs init file.
@@ -268,6 +269,17 @@ emacs init file.
 ;; Interactively Do Things
 (require 'ido)
 (ido-mode t)
+@end lisp
+
+@b{TAGS}
+
+To have Rinari automatically update your @code{tags-file-name} variable
+to point to the tags of your current rails project, set
+@code{rinari-tags-file-name} (@pxref{Navigation}) to the path to your
+tags file relative to the root of your rails applications.
+
+@lisp
+(setq rinari-tags-file-name "TAGS")
 @end lisp
 
 @node Navigation, Test Driven Development, Optional Setup, Top
@@ -304,6 +316,31 @@ will take you to the @emph{test_bar} method in
 @code{rinari-find-view} will open @emph{app/views/foos/bar.rhtml}, the
 bar method contains a redirect or render call in which case those will
 be followed to find the correct view to display.
+
+@b{TAGS (jumping to method definitions)}
+
+Emacs (as all grownup text editors should) makes use of tags (for a
+description of tags and their use see
+@uref{http://ctags.sourceforge.net/whatis.html}).  In Emacs the
+@code{find-tag} command is bound by default to @code{M-.}.  It is often
+convenient to use a different set of TAGS for every rails project.
+Rinari facilitates this by automatically updating your
+@code{tags-file-name} variable whenever you enter a rails project,
+through the use of the @code{rinari-tags-file-name} variable.  Just set
+@code{rianri-tags-file} to the path to your tags files relative to the
+root of the rails project.  For example...
+
+@lisp
+(setq rinari-tags-file-name "TAGS")
+@end lisp
+
+to create such a tags file using exuberant ctags
+(@uref{http://ctags.sourceforge.net/}) try executing something like the
+following from the root of your rails project.
+
+@example
+ctags-exuberant -a -e -f TAGS --tag-relative -R app lib vendor
+@end example
 
 @node Test Driven Development, Execution, Navigation, Top
 @chapter Test Driven Development
@@ -397,8 +434,8 @@ listed here.
 @cindex rhtml-Mode
 
 @emph{rhtml-mode} is part of the original Rinari project.  It allows
-editing of rhtml projects without having to use the often Flakey
-MMM-Mode @uref{http://www.emacswiki.org/cgi-bin/wiki/MultipleModes}.
+editing of rhtml projects without having to use the often flaky MMM-Mode
+@uref{http://www.emacswiki.org/cgi-bin/wiki/MultipleModes}.
 @emph{rhtml-mode} is presented here as an alternate option to
 nxhtml-mode which doesn't work for many people.
 
