@@ -69,6 +69,8 @@ Forrest Chang, Ryan Davis, Paul Stickne, and others
 @item Project page on rubyforge @uref{http://rubyforge.org/projects/rinari/}
 @item Latest versions available at
  @uref{http://github.com/eschulte/rinari/tree/master}
+@item Post Questions/Comments to
+@uref{http://groups.google.com/group/emacs-on-rails}
 @item For an html version of this documentation see
  @uref{http://rinari.rubyforge.org/}
 @item For information on the previous version of Rinari see
