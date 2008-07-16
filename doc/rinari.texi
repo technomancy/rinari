@@ -66,6 +66,7 @@ Forrest Chang, Ryan Davis, Paul Stickne, and others
 @b{Links}
 
 @itemize
+@item Project page on rubyforge @uref{http://rubyforge.org/projects/rinari/}
 @item Latest versions available at
  @uref{http://github.com/eschulte/rinari/tree/master}
 @item For an html version of this documentation see
@@ -93,10 +94,11 @@ use when working on a Rails applications including...
 @item @emph{Execution} of tests, consoles, and web-servers (@pxref{Execution})
 @end itemize
 
-Rinari does not deal with syntax highlighting for rhtml files, while all
-of the Rinari functions will be available from within your rhtml files
-you are free to chose from the many stand-alone solutions for rhtml
-major modes @pxref{Rhtml Setup}.
+Rinari does not deal with syntax highlighting for rhtml files (or
+.html.erb from here on out all erb templated html files will be referred
+to as ``rhtml'' files), while all of the Rinari functions will be
+available from within your rhtml files you are free to chose from the
+many stand-alone options for editing rhtml files @pxref{Rhtml Setup}.
 
 Following the lead of Dmitry Galinsky's suggestion for emacs-rails
 additional pieces of functionality like snippets, or tools like rdebug
@@ -177,6 +179,7 @@ presented here in order of decreasing functionality.
 @menu
 * nXhtml-Mode::           a package for web development
 * MuMaMo-Mode::           allows multiple major modes in a single buffer
+* rhtml-Mode::            edit rhtml files without using multiple major modes
 @end menu
 
 For editing rhtml files without using multiple major modes see
@@ -210,7 +213,7 @@ your downloaded nxml directory).
 (add-to-list 'auto-mode-alist '("\\.html\\.erb\\'" . eruby-nxhtml-mumamo))
 @end lisp
 
-@node MuMaMo-Mode, , nXhtml-Mode, Rhtml Setup
+@node MuMaMo-Mode, rhtml-Mode, nXhtml-Mode, Rhtml Setup
 @subsection MuMaMo-Mode
 @cindex MuMaMo-Mode
 
@@ -234,6 +237,30 @@ directory).
 (add-to-list 'auto-mode-alist '("\\.rhtml\\'" . eruby-html-mumamo))
 (add-to-list 'auto-mode-alist '("\\.html\\.erb\\'" . eruby-html-mumamo))
 @end lisp
+
+@node rhtml-Mode, , MuMaMo-Mode, Rhtml Setup
+@subsection rhtml-Mode
+@cindex rhtml-Mode
+
+@emph{rhtml-mode} is part of the original Rinari project.  It allows
+editing of rhtml projects without having to use the often flaky MMM-Mode
+@uref{http://www.emacswiki.org/cgi-bin/wiki/MultipleModes}.
+@emph{rhtml-mode} is presented here as an alternate option to
+nxhtml-mode which doesn't work for many people.
+
+To use @emph{rhtml-mode} for editing rhtml files, download the rhtml
+directory from @uref{http://github.com/eschulte/rhtml/tree/master} and
+place it in your elisp directory, then include the following in you
+emacs .init file
+
+@lisp
+;;; rhtml-mode
+(add-to-list 'load-path "~/path/to/your/elisp/rhtml")
+(require 'rhtml-mode)
+(add-hook 'rhtml-mode-hook
+	  (lambda () (rinari-launch)))
+@end lisp
+
 
 @node Optional Setup, Navigation, Rhtml Setup, Install
 @section Optional Setup
@@ -412,7 +439,7 @@ Insert an erb skeleton at point, with optional prefix argument don't
 include an '='.
 @end defun
 
-@node Bundles, rhtml-Mode, Miscellaneous, Top
+@node Bundles, , Miscellaneous, Top
 @chapter Bundles
 @cindex Bundles
 
@@ -425,31 +452,8 @@ If there is sufficient desire for such bundles or if @b{ideally} said
 bundles are interoperable between emacs-rails and Rinari, they will be
 listed here.
 
-@menu
-* rhtml-Mode::    Minor Mode for editing rhtml files (without MMM-Mode)
-@end menu
-
-@node rhtml-Mode, , Bundles, Bundles
-@section rhtml-Mode
-@cindex rhtml-Mode
-
-@emph{rhtml-mode} is part of the original Rinari project.  It allows
-editing of rhtml projects without having to use the often flaky MMM-Mode
-@uref{http://www.emacswiki.org/cgi-bin/wiki/MultipleModes}.
-@emph{rhtml-mode} is presented here as an alternate option to
-nxhtml-mode which doesn't work for many people.
-
-To use @emph{rhtml-mode} for editing rhtml files, download the rhtml
-directory from @uref{http://github.com/eschulte/rhtml/tree/master} and
-place it in your elisp directory, then include the following in you
-emacs .init file
-
-@lisp
-;;; rhtml-mode
-(add-to-list 'load-path "~/path/to/your/elisp/rhtml")
-(require 'rhtml-mode)
-(add-hook 'rhtml-mode-hook
-	  (lambda () (rinari-launch)))
-@end lisp
+@itemize
+@item Minor Mode for editing rhtml files (without MMM-Mode) @pxref{rhtml-Mode}
+@end itemize
 
 @bye
