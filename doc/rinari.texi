@@ -182,9 +182,6 @@ presented here in order of decreasing functionality.
 * rhtml-Mode::            edit rhtml files without using multiple major modes
 @end menu
 
-For editing rhtml files without using multiple major modes see
-@pxref{rhtml-Mode}
-
 @node nXhtml-Mode, MuMaMo-Mode, Rhtml Setup, Rhtml Setup
 @subsection nXhtml-Mode
 @cindex nXhtml-Mode
