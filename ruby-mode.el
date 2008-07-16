@@ -76,9 +76,11 @@
 (defun ruby-here-doc-beg-match ()
   (let ((contents (regexp-quote (concat (match-string 2) (match-string 3)))))
     (concat "<<"
-            (if (match-string 1)
-                (concat "\\(?:-\\(?1:[\"']\\)\\|\\(?1:[\"']\\)" (match-string 1) "\\)" contents "\\1")
-              (concat "-?\\([\"']\\|\\)" contents "\\1")))))
+            (let ((match (match-string 1)))
+              (if (and match (> (length match) 0))
+                  (concat "\\(?:-\\([\"']?\\)\\|\\([\"']\\)" (match-string 1) "\\)"
+                          contents "\\(\\1\\|\\2\\)")
+                (concat "-?\\([\"']\\|\\)" contents "\\1"))))))
 
 (defconst ruby-delimiter
   (concat "[?$/%(){}#\"'`.:]\\|<<\\|\\[\\|\\]\\|\\<\\("
@@ -1144,8 +1146,9 @@ balanced expression is found."
      (6 (7 . ?/)))
     ("^\\(=\\)begin\\(\\s \\|$\\)" 1 (7 . nil))
     ("^\\(=\\)end\\(\\s \\|$\\)" 1 (7 . nil))
-    (,(concat ruby-here-doc-beg-re ".*\\(?100:\n\\)")
-     100 (ruby-here-doc-beg-syntax))
+    (,(concat ruby-here-doc-beg-re ".*\\(\n\\)")
+     ,(+ 1 (regexp-opt-depth ruby-here-doc-beg-re))
+     (ruby-here-doc-beg-syntax))
     (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax))))
 
 
@@ -1190,7 +1193,7 @@ buffer position `limit' or the end of the buffer."
 
   (defun ruby-here-doc-end-syntax ()
     (save-excursion
-      (goto-char (match-beginning 0))
+      (goto-char (match-end 0))
       (let ((old-point (point))
             (beg-exists (re-search-backward (ruby-here-doc-beg-match) nil t))
             (eol (save-excursion (end-of-line) (point))))
@@ -1198,7 +1201,7 @@ buffer position `limit' or the end of the buffer."
                  (null (syntax-ppss-context (syntax-ppss))) ; And that's not inside a heredoc/string/comment...
                  (progn (goto-char (match-end 0)) ; And it's the last heredoc on its line...
                         (not (re-search-forward ruby-here-doc-beg-re eol t)))
-                 (not (ruby-here-doc-find-end old-point))) ; And it doesn't end before this point...
+                 (eq old-point (ruby-here-doc-find-end old-point))) ; And it ends at this point...
             (string-to-syntax "|")))))
 
 (if (featurep 'xemacs)
