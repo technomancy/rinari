@@ -205,7 +205,15 @@ renders and redirects to find the final controller or view."
 	 (if obj
 	     (or (rinari-open :model (singularize-string obj))
 		 (rinari-open :model (pluralize-string obj))
-		 (rinari-open :model obj t))
+		 ;; model doesn't exist
+		 ;; prompt for script/generate model
+		 (if (y-or-n-p (format "generate model %s?" obj))
+		     (progn
+		       (message (shell-command-to-string
+			       (format "ruby %sscript/generate model %s"
+				       (rinari-root) obj)))
+		       (rinari-find-model))
+		   (message (format "model %s doesn't exist" obj))))
 	   (let ((default-directory (concat (rinari-root) "app/models/")))
 	     (rinari-find-file)))))))
 
