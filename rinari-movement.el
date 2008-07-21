@@ -64,12 +64,12 @@
   (interactive)
   (mapconcat 'identity lst seperator))
 
-(defun rinari-open (type name)
+(defun rinari-open (type name &optional force)
   (let ((path (substring (concat (rinari-root)
 				 (format (replace-regexp-in-string
 					  "\*" "%s" (cdr (assoc type rinari-subdirs)) nil t)
 					 name)) 0 -1)))
-    (and (file-exists-p path) (find-file path))))
+    (and (or force (file-exists-p path)) (find-file path))))
 
 (defun rinari-whats-my-type ()
   "Return what section of the rails project is currently being visited."
@@ -204,7 +204,8 @@ renders and redirects to find the final controller or view."
 	 (message (format "%S" obj))
 	 (if obj
 	     (or (rinari-open :model (singularize-string obj))
-		 (rinari-open :model (pluralize-string obj)))
+		 (rinari-open :model (pluralize-string obj))
+		 (rinari-open :model obj t))
 	   (let ((default-directory (concat (rinari-root) "app/models/")))
 	     (rinari-find-file)))))))
 

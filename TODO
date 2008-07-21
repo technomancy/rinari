@@ -16,11 +16,8 @@ see
 
 ** rdebug
 - [[http://bashdb.sourceforge.net/ruby-debug.html#SEC_Top]]
-** snippets
-- using [[http://code.google.com/p/yasnippet/][yasnippets]]
-- find collection of rails snippets
-- configure to work with the three different rhtml options
-  - add html and rb snippets to rhtml
+** DONE snippets
+see http://github.com/eschulte/yasnippets-rails/tree/master
 * PARTIAL full test coverage [1/2]
 - [X] movement tests
 - [-] compilation tests

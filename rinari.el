@@ -247,37 +247,38 @@ With optional prefix argument just run `rgrep'."
   "Run `rinari-minor-mode' if inside of a rails projcect,
 otherwise turn `rinari-minor-mode' off if it is on."
   (interactive)
-  ;; customize toggle.el for rinari
-  (add-to-list
-   'toggle-mapping-styles
-   '(rinari  . (("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
-		("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
-		("app/models/\\1.rb#\\2"      . "test/unit/\\1_test.rb#test_\\2")
-		("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
-		("lib/\\1.rb#\\2"             . "test/unit/test_\\1.rb#test_\\2")
-		("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
-  (setq toggle-mapping-style 'rinari)
-  (setq toggle-mappings (toggle-style toggle-mapping-style))
-  (setq toggle-which-function-command 'ruby-add-log-current-method)
-  (setq toggle-method-format "def %s")
   (let* ((root (rinari-root)) (r-tags-path (concat root rinari-tags-file-name)))
     (if root
 	(progn
+	  ;; customize toggle.el for rinari
+	  (add-to-list
+	   'toggle-mapping-styles
+	   '(rinari  . (("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
+			("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
+			("app/models/\\1.rb#\\2"      . "test/unit/\\1_test.rb#test_\\2")
+			("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
+			("lib/\\1.rb#\\2"             . "test/unit/test_\\1.rb#test_\\2")
+			("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
+	  (setq toggle-mapping-style 'rinari)
+	  (setq toggle-mappings (toggle-style toggle-mapping-style))
+	  (setq toggle-which-function-command 'ruby-add-log-current-method)
+	  (setq toggle-method-format "def %s")
+;;; 	  ;; ruby compilation
+;;; 	  (set (make-local-variable 'compilation-error-regexp-alist)
+;;; 	       ruby-compilation-error-regexp-alist)
 	  (if (file-exists-p r-tags-path) (setq tags-file-name r-tags-path))
 	  (unless rinari-minor-mode (rinari-minor-mode t)))
       (if rinari-minor-mode (rinari-minor-mode)))))
 
-(add-hook 'ruby-mode-hook
-	  (lambda () (rinari-launch)))
+(defvar rinari-major-modes
+  '('ruby-mode-hook 'yaml-mode-hook 'mumamo-after-change-major-mode-hook 'css-mode-hook
+    'javascript-mode-hook 'dired-mode-hook)
+  "Major Modes from which to launch Rinari.")
 
-(add-hook 'yaml-mode-hook
-	  (lambda () (rinari-launch)))
-
-(add-hook 'mumamo-after-change-major-mode-hook
-	  (lambda () (rinari-launch)))
-
-(add-hook 'dired-mode-hook
-	  (lambda () (rinari-launch)))
+(mapcar (lambda (hook)
+	  (eval `(add-hook ,hook
+			   (lambda () (rinari-launch)))))
+	rinari-major-modes)
 
 (defadvice cd (after rinari-on-cd activate)
   "Active/Deactive rinari-minor-node when changing into and out
