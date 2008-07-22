@@ -109,6 +109,20 @@ editing of the rake command."
   (interactive "P")
   (ruby-rake-w/compilation task edit))
 
+(defun rinari-script (&optional script)
+  "Tab completing selection of a script from the script/
+directory of the rails application."
+  (interactive)
+  (let* ((root (rinari-root))
+	 (script (or script
+		     (completing-read "Script: " (directory-files (concat root "script") nil "^[^.]"))))
+	 (ruby-compilation-error-regexp-alist ;; for jumping to newly created files
+	  (if (equal script "generate")
+	      '(("^ +\\(exists\\|create\\) +\\([^[:space:]]+\\.rb\\)" 2 3))
+	    ruby-compilation-error-regexp-alist))
+	 (script (concat "script/" script " ")))
+    (ruby-run-w/compilation (concat root script (read-from-minibuffer script)))))
+
 (defun rinari-test (&optional edit-command)
   "Test the current ruby function.  If current function is not a
 test, then try to jump to the related test using `toggle-buffer'.
@@ -225,11 +239,11 @@ With optional prefix argument just run `rgrep'."
   "Key map for Rinari minor mode.")
 
 (defvar rinari-minor-mode-keybindings
-  '(("o"  . 'toggle-buffer)              ("s" . 'rinari-sql)
+  '(("o"  . 'toggle-buffer)              ("s" . 'rinari-script)
     ("e"  . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
     ("r"  . 'rinari-rake)                ("c" . 'rinari-console)
     ("w"  . 'rinari-web-server)          ("g" . 'rinari-rgrep)
-    ("b" . 'rinari-browse-url)
+    ("b" . 'rinari-browse-url)           ("q" . 'rinari-sql)
     ("fc" . 'rinari-find-controller)     ("ft" . 'rinari-find-test)
     ("fv" . 'rinari-find-view)           ("fm" . 'rinari-find-model)
     ("fi" . 'rinari-find-migration)      ("fe" . 'rinari-find-environment)
@@ -263,9 +277,6 @@ otherwise turn `rinari-minor-mode' off if it is on."
 	  (setq toggle-mappings (toggle-style toggle-mapping-style))
 	  (setq toggle-which-function-command 'ruby-add-log-current-method)
 	  (setq toggle-method-format "def %s")
-;;; 	  ;; ruby compilation
-;;; 	  (set (make-local-variable 'compilation-error-regexp-alist)
-;;; 	       ruby-compilation-error-regexp-alist)
 	  (if (file-exists-p r-tags-path) (setq tags-file-name r-tags-path))
 	  (unless rinari-minor-mode (rinari-minor-mode t)))
       (if rinari-minor-mode (rinari-minor-mode)))))
