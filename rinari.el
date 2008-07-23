@@ -159,8 +159,7 @@ argument to edit command line options."
     (save-excursion (pop-to-buffer "*ruby*")
       (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
       (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> ")
-      (rinari-launch)
-      (rename-buffer "*console*"))))
+      (rinari-launch))))
 
 (defun rinari-sql ()
   "Browse the application's database.  Looks up login information
