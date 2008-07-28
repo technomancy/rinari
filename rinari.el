@@ -101,13 +101,13 @@
 ;;--------------------------------------------------------------------------------
 ;; user functions
 
-(defun rinari-rake (&optional task edit)
+(defun rinari-rake (&optional task edit-cmd-args)
   "Tab completion selection of a rake task to execute with the
 output dumped to a compilation buffer allowing jumping between
 errors and source code.  With optional prefix argument allows
-editing of the rake command."
+editing of the rake command arguments."
   (interactive "P")
-  (ruby-rake-w/compilation task edit))
+  (ruby-rake-w/compilation task edit-cmd-args))
 
 (defun rinari-script (&optional script)
   "Tab completing selection of a script from the script/
@@ -123,11 +123,12 @@ directory of the rails application."
 	 (script (concat "script/" script " ")))
     (ruby-run-w/compilation (concat root script (read-from-minibuffer script)))))
 
-(defun rinari-test (&optional edit-command)
+(defun rinari-test (&optional edit-cmd-args)
   "Test the current ruby function.  If current function is not a
 test, then try to jump to the related test using `toggle-buffer'.
 Dump output to a compilation buffer allowing jumping between
-errors and source code."
+errors and source code.  With optional prefix argument allows
+editing of the test command arguments."
   (interactive "P")
   (or (string-match "test" (or (ruby-add-log-current-method)
 			       (file-name-nondirectory (buffer-file-name))))
@@ -140,19 +141,19 @@ errors and source code."
 	 (default-command (if fn
 			      (concat path " --name /" fn "/")
 			    path))
-	 (command (if edit-command
+	 (command (if edit-cmd-args
 		      (read-string "Run w/Compilation: " default-command)
 		    default-command)))
     (if path (ruby-run-w/compilation command)
       (message "no test available"))))
 
-(defun rinari-console (&optional arg)
+(defun rinari-console (&optional edit-cmd-args)
   "Run script/console in a compilation buffer, with command
-history and links between errors and source code.  Use a prefix
-argument to edit command line options."
+history and links between errors and source code.  With optional
+prefix argument allows editing of the console command arguments."
   (interactive "P")
   (let* ((script (concat (rinari-root) "script/console"))
-	 (command (if arg
+	 (command (if edit-cmd-args
 		      (read-string "Run Ruby: " (concat script " "))
 		    script)))
     (run-ruby command)
@@ -190,12 +191,17 @@ from your conf/database.sql file."
 	  (eval (list (intern (concat "sql-" adapter))))
 	  (rename-buffer (sql-name environment)) (rinari-launch))))))
 
-(defun rinari-web-server ()
+(defun rinari-web-server (&optional edit-cmd-args)
   "Run script/server.  Dump output to a compilation buffer
-allowing jumping between errors and source code."
-  (interactive)
-  (let ((default-directory (rinari-root)))
-    (ruby-run-w/compilation "script/server")))
+allowing jumping between errors and source code.  With optional
+prefix argument allows editing of the server command arguments."
+  (interactive "P")
+  (let* ((default-directory (rinari-root))
+	 (script (concat (rinari-root) "script/server"))
+	 (command (if edit-cmd-args
+		      (read-string "Run Ruby: " (concat script " "))
+		    script)))
+    (ruby-run-w/compilation command)))
 
 (defun rinari-browse-url ()
   "Browse the url of the current view, controller, test, or model

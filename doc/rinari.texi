@@ -60,7 +60,7 @@ Forrest Chang, Ryan Davis, Paul Stickne, and others
 * Test Driven Development::     Support for Test Driven Development
 * Execution::                   Running tests, consoles, and web-servers
 * Miscellaneous::               Leftover functions
-* Bundles::                     Independently loadable extra functionality
+* Add Ons::                     Additional Emacs tools that work well with Rinari and Rails
 @end menu
 
 @b{Links}
@@ -100,11 +100,11 @@ Rinari does not deal with syntax highlighting for rhtml files (or
 .html.erb from here on out all erb templated html files will be referred
 to as ``rhtml'' files), while all of the Rinari functions will be
 available from within your rhtml files you are free to chose from the
-many stand-alone options for editing rhtml files @pxref{Rhtml Setup}.
+many stand-alone options for editing rhtml files (@pxref{Rhtml Setup}).
 
 Following the lead of Dmitry Galinsky's suggestion for emacs-rails
 additional pieces of functionality like snippets, or tools like rdebug
-may be made available as modular Bundles @pxref{Bundles}, which would be
+may be made available as Add Ons (@pxref{Add Ons}), which would be
 individually loaded.
 
 See
@@ -133,6 +133,13 @@ to you, read through the Emacs tutorial.  To do so open Emacs and press
 @code{C-ht} (meaning press the ``h'' key while holding down the ``Ctrl''
 key and then press the ``t'' key).
 @end itemize
+
+@b{Major Modes}
+
+There are a collection of Major Modes which are useful when working on a
+Rails project (not the least of which is Ruby-Mode!).  You might want to
+check this Major Mode List (@pxref{Add Ons}) to ensure that you aren't
+missing anything vital.
 
 @b{Rinari}
 
@@ -220,7 +227,7 @@ MuMaMo-Mode allow @b{Mu}ltiple @b{Ma}jor @b{Mo}des in a single Emacs
 buffer.  For more information see
 @uref{http://www.emacswiki.org/cgi-bin/wiki/MuMaMo}.
 
-MuMaMo-Mode comes bundles with nXhtml-Mode, so to install it download
+MuMaMo-Mode comes bundled with nXhtml-Mode, so to install it download
 nXhtml-Mode from
 @uref{http://ourcomments.org/Emacs/nXhtml/doc/nxhtml.html}.  To use
 MuMaMo-Mode when editing rhtml files, save the resulting directory into
@@ -378,6 +385,13 @@ the unit or functional test related to the current method or buffer.
 The results of the test are dumped into an emacs Compilation buffer
 which allows jumping between error messages and the related source code.
 
+@defun rinari-test
+Test the current ruby function.  If current function is not a
+test, then try to jump to the related test and run it.  Dump
+output to a compilation buffer allowing jumping between errors
+and source code.
+@end defun
+
 @node Execution, Miscellaneous, Test Driven Development, Top
 @chapter Execution
 @cindex execution
@@ -417,7 +431,7 @@ Dump output to a compilation buffer allowing jumping between
 errors and source code.
 @end defun
 
-@node Miscellaneous, Bundles, Execution, Top
+@node Miscellaneous, Add Ons, Execution, Top
 @chapter Miscellaneous
 @cindex Miscellaneous
 
@@ -438,21 +452,40 @@ Insert an erb skeleton at point, with optional prefix argument don't
 include an '='.
 @end defun
 
-@node Bundles, , Miscellaneous, Top
-@chapter Bundles
-@cindex Bundles
+@node Add Ons, , Miscellaneous, Top
+@chapter Add Ons
+@cindex Add Ons
 
 Previous versions of both emacs-rails mode, and Rinari were very feature
-rich, but bloated and cumbersome.  To avoid this Dmitry Galinsky (who I
-believe is the author of emacs-rails) has suggested providing much of
-this additional functionality as independent individual loadable bundles
+rich, but bloated and cumbersome.  To maintain a small, clean, reliable,
+functional, and hackable core Rinari will shun much of the ``bells and
+whistles'' type functionality.  However that is not to say that these
+extra goodies might not be useful.
 
-If there is sufficient desire for such bundles or if @b{ideally} said
-bundles are interoperable between emacs-rails and Rinari, they will be
-listed here.
+This page should serve as marshaling point for links to some other
+tools/packages that work well with Rinari and Rails in general.  If you
+have any ideas for additions to this list, or for new Rinari features in
+please let us know at
+@uref{http://groups.google.com/group/emacs-on-rails}.
 
+@b{Essential Major Modes for working with Rails}
 @itemize
-@item Minor Mode for editing rhtml files (without MMM-Mode) @pxref{rhtml-Mode}
+@item @b{Ruby Mode}, and some other general Ruby-Emacs goodies can be found in the @code{/misc} directory
+of your ruby distribution and at
+@uref{http://svn.ruby-lang.org/cgi-bin/viewvc.cgi/trunk/misc/}
+@item @b{YAML Mode} @uref{http://www.emacswiki.org/cgi-bin/wiki/YamlMode}
+@item @b{CSS Mode} @uref{http://www.emacswiki.org/cgi-bin/emacs/css-mode-simple.el}
+@item @b{JavaScript Mode} @uref{http://www.emacswiki.org/cgi-bin/wiki/JavaScriptMode#toc1}
+@end itemize
+
+@b{Other Tools}
+@itemize
+@item @b{Rhtml Mode} Minor Mode for editing rhtml files (without MMM-Mode) @pxref{rhtml-Mode}
+@item @b{Snippets} @uref{http://code.google.com/p/yasnippet/} and
+@b{Rails snippets} @uref{http://github.com/eschulte/yasnippets-rails/tree/master}
+@item @b{ruby-debug} support
+@uref{http://groups.google.com/group/emacs-on-rails/browse_thread/thread/dfaa224905b51487}
+@item @b{ido Mode} @uref{http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings}
 @end itemize
 
 @bye

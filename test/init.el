@@ -43,7 +43,7 @@
 		      'rinari-find-view
 		      '("app/views/units/fall.html.erb" . 1))))))
 
-(deftest rinari-create-momdel rinari-suite
+(deftest rinari-create-model-test rinari-suite
   ;; testing the creation of models when they don't exist
   (let* ((default-directory (format "%s" (concat (file-name-directory
 						  (or load-file-name buffer-file-name))
@@ -55,7 +55,11 @@
     (kill-buffer (file-name-nondirectory new-model))
     (kill-buffer (file-name-nondirectory new-controller))
     (assert-that (file-exists-p new-model))
-    (delete-file new-model)))
+    (delete-file new-model)
+    ;; delete all of the migrations
+    (mapcar (lambda (file)
+	      (delete-file (concat default-directory "/db/migrate/" file)))
+	    (directory-files "db/migrate/" nil "^[^.]"))))
 
 (deftest rinari-console-test rinari-suite
   ;; testing ability to launch console, server, and a test
