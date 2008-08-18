@@ -47,4 +47,4 @@ namespace "doc" do
 
 end
 
-task :default => :test
+task :default => :'test:emacs'

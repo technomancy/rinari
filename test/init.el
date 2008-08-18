@@ -51,7 +51,7 @@
 	 (new-controller (concat default-directory "app/controllers/newone_controller.rb"))
 	 (new-model (concat default-directory "app/models/newone.rb")))
     (find-file new-controller)
-    (rinari-find-model) ;; answer yes to the prompt
+    (rinari-find-model) ;; answer yes to the prompt ;; TODO: find a way to mock out the prompt
     (kill-buffer (file-name-nondirectory new-model))
     (kill-buffer (file-name-nondirectory new-controller))
     (assert-that (file-exists-p new-model))
@@ -96,6 +96,21 @@
       (kill-buffer "*units_controller_test.rb*")
       (kill-buffer "units_controller_test.rb")
       (kill-buffer "units_controller.rb"))))
+
+;; TODO: for some reason this doesn't work inside the test body
+(add-hook 'rinari-minor-mode-hook '(lambda () (setq hooks-ran t)))
+
+(deftest rinari-hooks rinari-suite
+  (save-excursion
+    (unwind-protect ;; like ruby's ensure
+        (progn
+          (let ((default-directory (format "%s" (concat (file-name-directory
+                                                         (or load-file-name buffer-file-name))
+                                                        "rails-app/"))))
+            (find-file "app/controllers/units_controller.rb")
+            (assert-that hooks-ran)))
+      (kill-buffer "units_controller.rb")
+      (setq hooks-ran nil))))
 
 ;; (elunit-run-suite (elunit-get-suite 'rinari-movement-suite))
 (elunit "rinari-suite")
