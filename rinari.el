@@ -62,6 +62,9 @@
   "TAGS"
   "Path to your TAGS file inside of your rails project.  See `tags-file-name'.")
 
+(defvar rinari-minor-mode-hook nil
+  "*Hook for customising Rinari.")
+
 (defadvice find-file-in-project (around find-file-in-rinari-project activate)
   "Wrap `find-file-in-project' to use `rinari-root' as the base of
   the project."
@@ -264,28 +267,31 @@ With optional prefix argument just run `rgrep'."
 	rinari-minor-mode-keybindings)
 
 (defun rinari-launch ()
-  "Run `rinari-minor-mode' if inside of a rails projcect,
+  "Run `rinari-minor-mode' if inside of a rails projecct,
 otherwise turn `rinari-minor-mode' off if it is on."
   (interactive)
   (let* ((root (rinari-root)) (r-tags-path (concat root rinari-tags-file-name)))
-    (if root
-	(progn
-	  ;; customize toggle.el for rinari
-	  (add-to-list
-	   'toggle-mapping-styles
-	   '(rinari  . (("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
-			("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
-			("app/models/\\1.rb#\\2"      . "test/unit/\\1_test.rb#test_\\2")
-			("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
-			("lib/\\1.rb#\\2"             . "test/unit/test_\\1.rb#test_\\2")
-			("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
-	  (setq toggle-mapping-style 'rinari)
-	  (setq toggle-mappings (toggle-style toggle-mapping-style))
-	  (setq toggle-which-function-command 'ruby-add-log-current-method)
-	  (setq toggle-method-format "def %s")
-	  (if (file-exists-p r-tags-path) (setq tags-file-name r-tags-path))
-	  (unless rinari-minor-mode (rinari-minor-mode t)))
-      (if rinari-minor-mode (rinari-minor-mode)))))
+    (when root
+      ;; customize toggle.el for rinari
+      (add-to-list
+       'toggle-mapping-styles
+       '(rinari  . (("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
+                    ("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
+                    ("app/models/\\1.rb#\\2"      . "test/unit/\\1_test.rb#test_\\2")
+                    ("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
+                    ("lib/\\1.rb#\\2"             . "test/unit/test_\\1.rb#test_\\2")
+                    ("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
+      (set (make-local-variable 'toggle-mapping-style) 'rinari)
+      (set (make-local-variable 'toggle-which-function-command)
+           'ruby-add-log-current-method)
+      (set (make-local-variable 'toggle-mappings)
+           (toggle-style toggle-mapping-style))
+      (set (make-local-variable 'toggle-method-format) "def %s")
+      (set (make-local-variable 'tags-file-name)
+           (and (file-exists-p r-tags-path) r-tags-path))
+      (run-hooks 'rinari-minor-mode-hook)
+      ;; TODO: Why is there mode-toggling logic here? define-minor-mode handles that for us.
+      (unless rinari-minor-mode (rinari-minor-mode t)))))
 
 (defvar rinari-major-modes
   '('ruby-mode-hook 'yaml-mode-hook 'mumamo-after-change-major-mode-hook 'css-mode-hook
