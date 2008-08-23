@@ -35,31 +35,13 @@
 			     (kill-buffer (file-name-nondirectory (car start))))))
 	(here-to-here '("test/unit/example_test.rb" . 153)
 		      'rinari-find-model
-		      '("app/models/example.rb" . 39))
+		      '("app/models/example.rb" . 37))
 	(here-to-here '("app/controllers/units_controller.rb" . 52)
 		      'rinari-find-test
-		      '("test/functional/units_controller_test.rb" . 152))
+		      '("test/functional/units_controller_test.rb" . 150))
 	(here-to-here '("app/controllers/units_controller.rb" . 61)
 		      'rinari-find-view
 		      '("app/views/units/fall.html.erb" . 1))))))
-
-(deftest rinari-create-model-test rinari-suite
-  ;; testing the creation of models when they don't exist
-  (let* ((default-directory (format "%s" (concat (file-name-directory
-						  (or load-file-name buffer-file-name))
-						 "rails-app/")))
-	 (new-controller (concat default-directory "app/controllers/newone_controller.rb"))
-	 (new-model (concat default-directory "app/models/newone.rb")))
-    (find-file new-controller)
-    (rinari-find-model) ;; answer yes to the prompt ;; TODO: find a way to mock out the prompt
-    (kill-buffer (file-name-nondirectory new-model))
-    (kill-buffer (file-name-nondirectory new-controller))
-    (assert-that (file-exists-p new-model))
-    (delete-file new-model)
-    ;; delete all of the migrations
-    (mapcar (lambda (file)
-	      (delete-file (concat default-directory "/db/migrate/" file)))
-	    (directory-files "db/migrate/" nil "^[^.]"))))
 
 (deftest rinari-console-test rinari-suite
   ;; testing ability to launch console, server, and a test

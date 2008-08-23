@@ -27,46 +27,6 @@ see http://github.com/eschulte/yasnippets-rails/tree/master
   - [ ] sql
   - [ ] script
 
-* PARTIAL rinari movement [0/1]
-
-From anywhere, get to the related model/controller/test/view
-
-where can you be?
-- view
-- controller
-- model
-- unit-test
-- functional-test
-- other
-
-pending...
-- [X] still need to work on movement from OTHER places
-- [X] look at a better keybinding setup
-- [X] rails2 style view names
-- [ ] code refactor:
-
-** code refactor
-
-actually I'm thinking that when I have time it would be worthwhile to
-remove toggle, and handle all of the movement through a new
-independent toggle-like tool say "toggle-hassle" which uses an alist
-like toggle, but instead of elements like
-
-("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
-
-it has elements like
-
-("app/controllers/\\1_controller.rb#\\2"
- (
-  (:model . "app/models/\\1.rb#\\2")
-  (:test  . "app/test/functional/\\1_controller_test.rb#\\2")
-  (:view  . "app/views/\\1/\\2.rhtml")
- )
-)
-
-basically like toggle but more of a hassle to set up, and with
-enough functionality to subsume rinari-movement.el
-
 * MAYBE inf-ruby enhancement
 
 found an example of an error that the
@@ -94,6 +54,33 @@ and another
 * TODO windows support
 
 ugh
+
+* DONE rinari movement [4/4]
+
+From anywhere, get to the related model/controller/test/view
+
+where can you be?
+- view
+- controller
+- model
+- unit-test
+- functional-test
+- other
+
+pending...
+- [X] still need to work on movement from OTHER places
+- [X] look at a better keybinding setup
+- [X] rails2 style view names
+- [X] code refactor:
+
+** code refactor
+
+actually I'm thinking that when I have time it would be worthwhile to
+remove toggle, and handle all of the movement through a new
+independent toggle-like tool say "toggle-hassle" which uses an alist
+like toggle, but instead of elements like
+
+Done see http://github.com/eschulte/jump.el/tree/master
 
 * DONE add yaml,css,javascript,ruby pointers to the documentation
 * CANCELLED adjust eshell/shell environment to highlight ruby errors
