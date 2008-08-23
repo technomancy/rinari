@@ -6,7 +6,7 @@
 ;; URL: http://rinari.rubyforge.org
 ;; Version: 2.0
 ;; Created: 2006-11-10
-;; Keywords: ruby, rails
+;; Keywords: ruby, rails, project, convenience, web
 ;; EmacsWiki: Rinari
 
 ;; This file is NOT part of GNU Emacs.
@@ -46,13 +46,15 @@
 ;; See TODO file in this directory.
 
 ;;; Code:
+(let ((this-dir (file-name-directory (or load-file-name buffer-file-name))))
+  (add-to-list 'load-path this-dir)
+  (add-to-list 'load-path (expand-file-name "util" this-dir))
+  (add-to-list 'load-path (expand-file-name "util/jump" this-dir)))
 (require 'ruby-mode)
 (require 'inf-ruby)
 (require 'ruby-compilation)
+(require 'jump)
 (require 'cl)
-(require 'toggle)
-(require 'find-file-in-project)
-(require 'rinari-movement)
 
 (defcustom rinari-browse-url-func
   'browse-url
@@ -64,12 +66,6 @@
 
 (defvar rinari-minor-mode-hook nil
   "*Hook for customising Rinari.")
-
-(defadvice find-file-in-project (around find-file-in-rinari-project activate)
-  "Wrap `find-file-in-project' to use `rinari-root' as the base of
-  the project."
-  (let ((ffip-project-root (rinari-root)))
-    ad-do-it))
 
 (defadvice ruby-run-w/compilation (around rinari-run-w/compilation activate)
   "Set default directory to the root of the rails application
@@ -128,14 +124,14 @@ directory of the rails application."
 
 (defun rinari-test (&optional edit-cmd-args)
   "Test the current ruby function.  If current function is not a
-test, then try to jump to the related test using `toggle-buffer'.
-Dump output to a compilation buffer allowing jumping between
-errors and source code.  With optional prefix argument allows
-editing of the test command arguments."
+test, then try to jump to the related test using
+`rinari-find-test'.  Dump output to a compilation buffer allowing
+jumping between errors and source code.  With optional prefix
+argument allows editing of the test command arguments."
   (interactive "P")
   (or (string-match "test" (or (ruby-add-log-current-method)
 			       (file-name-nondirectory (buffer-file-name))))
-      (toggle-buffer))
+      (rinari-find-test))
   (let* ((funname (ruby-add-log-current-method))
 	 (fn (and funname
 		  (string-match "#\\(.*\\)" funname)
@@ -240,6 +236,192 @@ With optional prefix argument just run `rgrep'."
 	     "*.rb *.rhtml *.yml *.erb" (rinari-root))))
 
 ;;--------------------------------------------------------------------
+;; rinari movement using jump.el
+
+(defun rinari-generate (type name)
+  (message (shell-command-to-string
+	    (format "ruby %sscript/generate %s %s" (rinari-root) type
+		    (read-from-minibuffer (format "create %s: " type) name)))))
+
+(defvar rinari-ruby-hash-regexp
+  "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\':]?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
+  "Regexp to match subsequent key => value pairs of a ruby hash.")
+
+(defun rinari-ruby-values-from-render (controller action)
+  "Adjusts CONTROLLER and ACTION acording to keyword arguments in
+the hash at `point', then return (CONTROLLER . ACTION)"
+  (let ((end (save-excursion
+	       (re-search-forward "[^,{(]$" nil t)
+	       (+ 1 (point)))))
+    (save-excursion
+      (while (and (< (point) end)
+		  (re-search-forward rinari-ruby-hash-regexp end t))
+	(if (> (length (match-string 3)) 1)
+	    (case (intern (match-string 1))
+	      (:partial (setf action (concat "_" (match-string 3))))
+	      (:action  (setf action (match-string 3)))
+	      (:controller (setf controller (match-string 3)))))))
+    (cons controller action)))
+
+(defun rinari-which-render (renders)
+  (let ((path (jump-completing-read
+	       "Follow: "
+	       (mapcar (lambda (lis)
+			 (concat (car lis) "/" (cdr lis)))
+		       renders))))
+    (string-match "\\(.*\\)/\\(.*\\)" path)
+    (cons (match-string 1 path) (match-string 2 path))))
+
+(defun rinari-follow-controller-and-action (controller action)
+  "Follow the current controller-and-action through all of the
+renders and redirects to find the final controller or view."
+  (save-excursion ;; if we can find the controller#action pair
+    (if (and (jump-to-path (format "app/controllers/%s_controller.rb#%s" controller action))
+	     (equalp (jump-method) action))
+	(let ((start (point)) ;; demarcate the borders
+	      (renders (list (cons controller action))) render view)
+	  (ruby-forward-sexp)
+	  ;; collect redirection options and pursue
+	  (while (re-search-backward "re\\(?:direct_to\\|nder\\)" start t)
+	    (add-to-list 'renders (rinari-ruby-values-from-render controller action)))
+	  (let ((render (if (equalp 1 (length renders))
+			    (car renders)
+			  (rinari-which-render renders))))
+	    (if (and (equalp (cdr render) action)
+		     (equalp (car render) controller))
+		(list controller action) ;; directed to here so return
+	      (rinari-follow-controller-and-action (or (car render)
+						       controller)
+						   (or (cdr render)
+						       action)))))
+      ;; no controller entry so return
+      (list controller action))))
+
+(setf
+ rinari-jump-schema
+ '((model
+    "m"
+    (("app/controllers/\\1_controller.rb#\\2"  . "app/models/\\1.rb#\\2")
+     ("app/views/\\1/.*"                       . "app/models/\\1.rb")
+     ("app/helpers/\\1_helper.rb"              . "app/models/\\1.rb")
+     ("db/migrate/.*create_\\1.rb"             . "app/models/\\1.rb")
+     ("test/functional/\\1_controller_test.rb" . "app/models/\\1.rb")
+     ("test/unit/\\1_test.rb#test_\\2"         . "app/models/\\1.rb#\\2")
+     ("test/unit/\\1_test.rb"                  . "app/models/\\1.rb")
+     ("test/fixtures/\\1.yml"                  . "app/models/\\1.rb")
+     (t                                        . "app/models/"))
+    (lambda (path)
+      (rinari-generate "model"
+		       (and (string-match ".*/\\(.+?\\)\.rb" path)
+			    (match-string 1 path)))))
+   (controller
+    "c"
+    (("app/models/\\1.rb"                      . "app/controllers/\\1_controller.rb")
+     ("app/views/\\1/\\2\\..*"                 . "app/controllers/\\1_controller.rb#\\2")
+     ("app/helpers/\\1_helper.rb"              . "app/controllers/\\1_controller.rb")
+     ("db/migrate/.*create_\\1.rb"             . "app/controllers/\\1_controller.rb")
+     ("test/functional/\\1_controller_test.rb" . "app/controllers/\\1_controller.rb")
+     ("test/unit/\\1_test.rb#test_\\2"         . "app/controllers/\\1_controller.rb#\\2")
+     ("test/unit/\\1_test.rb"                  . "app/controllers/\\1_controller.rb")
+     ("test/fixtures/\\1.yml"                  . "app/controllers/\\1_controller.rb")
+     (t                                        . "app/controllers/"))
+    (lambda (path)
+      (rinari-generate "model"
+		       (and (string-match ".*/\\(.+?\\)_controller\.rb" path)
+			    (match-string 1 path)))))
+   (view
+    "v"
+    (("app/models/\\1.rb"                      . "app/views/\\1/.*")
+     ((lambda () ;; find the controller/view
+	(rinari-follow-controller-and-action
+	 (let ((file (file-name-nondirectory (buffer-file-name))))
+	   (and (string-match "^\\(.*\\)_controller.rb" file)
+		(match-string 1 file)));; controller
+	 (let ((method (ruby-add-log-current-method))) ;; action
+	   (and (string-match "#\\(.*\\)" method) (match-string 1 method)))))
+                                               . "app/views/\\1/\\2\\..*")
+     ("app/helpers/\\1_helper.rb"              . "app/views/\\1/.*")
+     ("db/migrate/.*create_\\1.rb"             . "app/views/\\1/.*")
+     ("test/functional/\\1_controller_test.rb" . "app/views/\\1/.*")
+     ("test/unit/\\1_test.rb#test_\\2"         . "app/views/\\1/_?\\2.*")
+     ("test/fixtures/\\1.yml"                  . "app/views/\\1/.*")
+     (t                                        . "app/views/.*"))
+    nil)
+   (test
+    "t"
+    (("app/models/\\1.rb#\\2"                  . "test/unit/\\1_test.rb#test_\\2")
+     ("app/controllers/\\1.rb#\\2"             . "test/functional/\\1_test.rb#test_\\2")
+     ("app/views/\\1/_?\\2\\..*"               . "test/functional/\\1_controller_test.rb#test_\\2")
+     ("app/helpers/\\1_helper.rb"              . "test/functional/\\1_controller_test.rb")
+     ("db/migrate/.*create_\\1.rb"             . "test/unit/\\1_test.rb")
+     ("test/functional/\\1_controller_test.rb" . "test/unit/\\1_test.rb")
+     ("test/unit/\\1_test.rb"                  . "test/functional/\\1_controller_test.rb")
+     (t                                        . "test/.*"))
+    nil)
+   (fixture
+    "x"
+    (("app/models/\\1.rb"                      . "test/fixtures/\\1.yml")
+     ("app/controllers/\\1_controller.rb"      . "test/fixtures/\\1.yml")
+     ("app/views/\\1/.*"                       . "test/fixtures/\\1.yml")
+     ("app/helpers/\\1_helper.rb"              . "test/fixtures/\\1.yml")
+     ("db/migrate/.*create_\\1.rb"             . "test/fixtures/\\1.yml")
+     ("test/functional/\\1_controller_test.rb" . "test/fixtures/\\1.yml")
+     ("test/unit/\\1_test.rb"                  . "test/fixtures/\\1.yml")
+     (t                                        . "test/fixtures/"))
+    nil)
+   (helper
+    "h"
+    (("app/models/\\1.rb"                      . "app/helpers/\\1_helper.rb")
+     ("app/controllers/\\1_controller.rb"      . "app/helpers/\\1_helper.rb")
+     ("app/views/\\1/.*"                       . "app/helpers/\\1_helper.rb")
+     ("app/helpers/\\1_helper.rb"              . "app/helpers/\\1_helper.rb")
+     ("db/migrate/.*create_\\1.rb"             . "app/helpers/\\1_helper.rb")
+     ("test/functional/\\1_controller_test.rb" . "app/helpers/\\1_helper.rb")
+     ("test/unit/\\1_test.rb#test_\\2"         . "app/helpers/\\1_helper.rb#\\2")
+     ("test/unit/\\1_test.rb"                  . "app/helpers/\\1_helper.rb")
+     (t                                        . "app/helpers/"))
+    nil)
+   (migration
+    "i"
+    (("app/controllers/\\1_controller.rb"      . "db/migrate/.*create_\\1.rb")
+     ("app/views/\\1/.*"                       . "db/migrate/.*create_\\1.rb")
+     ("app/helpers/\\1_helper.rb"              . "db/migrate/.*create_\\1.rb")
+     ("app/models/\\1.rb"                      . "db/migrate/.*create_\\1.rb")
+     ("test/functional/\\1_controller_test.rb" . "db/migrate/.*create_\\1.rb")
+     ("test/unit/\\1_test.rb#test_\\2"         . "db/migrate/.*create_\\1.rb#\\2")
+     ("test/unit/\\1_test.rb"                  . "db/migrate/.*create_\\1.rb")
+     (t                                        . "db/migrate/"))
+    (lambda (path)
+      (rinari-generate "migration"
+		       (and (string-match ".*create_\\(.+?\\)\.rb" path)
+			    (match-string 1 path)))))
+   (environment "e" ((t . "config/environments/")) nil)
+   (configuration "n" ((t . "config/")) nil)
+   (script "s" ((t . "script/")) nil)
+   (lib "l" ((t . "lib/")) nil)
+   (log "o" ((t . "log/")) nil)
+   (worker "w" ((t . "lib/workers/")) nil)
+   (public "p" ((t . "public/")) nil)
+   (stylesheet "y" ((t . "public/stylesheets/.*")) nil)
+   (javascript "j" ((t . "public/javascripts/.*")) nil)
+   (plugin "l" ((t . "vendor/plugins/")) nil)
+   (file-in-project "f" ((t . ".*")) nil)))
+
+(mapcar
+ (lambda (type)
+   (let ((name (first type))
+	 (specs (third type))
+	 (make (fourth type)))
+     (eval `(defjump
+	      (quote ,(read (format "rinari-find-%S" name)))
+	      (quote ,specs)
+	      'rinari-root
+	      ,(format "Go to the most logical %S given the current location" name)
+	      ,(if make `(quote ,make))
+	      'ruby-add-log-current-method))))
+ rinari-jump-schema)
+
+;;--------------------------------------------------------------------
 ;; minor mode and keymaps
 
 (defvar rinari-minor-mode-map
@@ -247,24 +429,26 @@ With optional prefix argument just run `rgrep'."
     map)
   "Key map for Rinari minor mode.")
 
+(defun rinari-bind-key-to-func (key func)
+  (eval `(define-key rinari-minor-mode-map 
+	   ,(format "\C-c;%s" key) ,func))
+  (eval `(define-key rinari-minor-mode-map 
+	   ,(format "\C-c'%s" key) ,func)))
+
 (defvar rinari-minor-mode-keybindings
-  '(("o"  . 'toggle-buffer)              ("s" . 'rinari-script)
-    ("e"  . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
-    ("r"  . 'rinari-rake)                ("c" . 'rinari-console)
-    ("w"  . 'rinari-web-server)          ("g" . 'rinari-rgrep)
-    ("b" . 'rinari-browse-url)           ("q" . 'rinari-sql)
-    ("fc" . 'rinari-find-controller)     ("ft" . 'rinari-find-test)
-    ("fv" . 'rinari-find-view)           ("fm" . 'rinari-find-model)
-    ("fi" . 'rinari-find-migration)      ("fe" . 'rinari-find-environment)
-    ("fj" . 'rinari-find-javascript)     ("fs" . 'rinari-find-stylesheet))
+  '(("s" . 'rinari-script)
+    ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
+    ("r" . 'rinari-rake)                ("c" . 'rinari-console)
+    ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep)
+    ("b" . 'rinari-browse-url)          ("q" . 'rinari-sql))
   "alist mapping of keys to functions in `rinari-minor-mode'")
 
-(mapcar (lambda (el)
-	  (eval `(define-key rinari-minor-mode-map 
-		   ,(format "\C-c;%s" (car el)) ,(cdr el)))
-	  (eval `(define-key rinari-minor-mode-map 
-		   ,(format "\C-c'%s" (car el)) ,(cdr el))))
-	rinari-minor-mode-keybindings)
+(mapcar (lambda (el) (rinari-bind-key-to-func (car el) (cdr el)))
+	(append (mapcar (lambda (el)
+			  (cons (concat "f" (second el))
+				(read (format "'rinari-find-%S" (first el)))))
+			rinari-jump-schema)
+		rinari-minor-mode-keybindings))
 
 (defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projecct,
@@ -272,30 +456,13 @@ otherwise turn `rinari-minor-mode' off if it is on."
   (interactive)
   (let* ((root (rinari-root)) (r-tags-path (concat root rinari-tags-file-name)))
     (when root
-      ;; customize toggle.el for rinari
-      (add-to-list
-       'toggle-mapping-styles
-       '(rinari  . (("app/controllers/\\1.rb#\\2" . "test/functional/\\1_test.rb#test_\\2")
-                    ("app/controllers/\\1.rb"     . "test/functional/\\1_test.rb")
-                    ("app/models/\\1.rb#\\2"      . "test/unit/\\1_test.rb#test_\\2")
-                    ("app/models/\\1.rb"          . "test/unit/\\1_test.rb")
-                    ("lib/\\1.rb#\\2"             . "test/unit/test_\\1.rb#test_\\2")
-                    ("lib/\\1.rb"                 . "test/unit/test_\\1.rb"))))
-      (set (make-local-variable 'toggle-mapping-style) 'rinari)
-      (set (make-local-variable 'toggle-which-function-command)
-           'ruby-add-log-current-method)
-      (set (make-local-variable 'toggle-mappings)
-           (toggle-style toggle-mapping-style))
-      (set (make-local-variable 'toggle-method-format) "def %s")
       (set (make-local-variable 'tags-file-name)
            (and (file-exists-p r-tags-path) r-tags-path))
       (run-hooks 'rinari-minor-mode-hook)
-      ;; TODO: Why is there mode-toggling logic here? define-minor-mode handles that for us.
-      (unless rinari-minor-mode (rinari-minor-mode t)))))
+      (rinari-minor-mode t))))
 
 (defvar rinari-major-modes
-  '('ruby-mode-hook 'yaml-mode-hook 'mumamo-after-change-major-mode-hook 'css-mode-hook
-    'javascript-mode-hook 'dired-mode-hook)
+  '('find-file-hook 'mumamo-after-change-major-mode-hook 'dired-mode-hook)
   "Major Modes from which to launch Rinari.")
 
 (mapcar (lambda (hook)

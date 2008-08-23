@@ -175,7 +175,6 @@ code to your .emacs file:
 @lisp
   (add-to-list 'load-path "~/path/to/your/elisp/rinari")
   (require 'rinari)
-  (global-set-key (kbd "C-x C-M-f") 'find-file-in-project) ;; optional
 @end lisp
 
 @node Rhtml Setup, Optional Setup, Basic Setup, Install
@@ -320,25 +319,7 @@ tags file relative to the root of your rails applications.
 @cindex navigation
 
 Rinari leverages the structure of Rails projects to allow immediate
-navigation between source files.  The following four commands use
-information on the file and method you are current visiting to open the
-appropriate model, controller, view or test file and method.
-
-@defun rinari-find-model
-Go to the most logical model given the current location.
-@end defun
-
-@defun rinari-find-controller
-Go to the most logical controller given the current location.
-@end defun
-
-@defun rinari-find-view
-Go to the most logical view given the current location.
-@end defun
-
-@defun rinari-find-test
-Go to the most logical test given the current location.
-@end defun
+navigation between source files.
 
 So for example if you are in a buffer open to @emph{foo_controller.rb},
 a call to @code{rinari-find-model} will open the @emph{foo.rb} model
@@ -346,9 +327,13 @@ file.  Say you are currently inside the @emph{bar} method in a buffer
 visiting @emph{foo_controller.rb}, then calling @code{rinari-find-test}
 will take you to the @emph{test_bar} method in
 @emph{test/functional/foo_controller_test.rb}, or calling
-@code{rinari-find-view} will open @emph{app/views/foos/bar.rhtml}, the
-bar method contains a redirect or render call in which case those will
-be followed to find the correct view to display.
+@code{rinari-find-view} will open @emph{app/views/foos/bar.rhtml}.
+
+All told there are 17 different rinari-find-* functions, which are all
+bound to similar hopefully intuitive keybindings allowing you to go
+anywhere from anywhere.  To see the full range of rinari-find functions
+along with their bindings enter a rails project, activate rinari and
+call describe-bindings @code{\H-b}.
 
 @b{TAGS (jumping to method definitions)}
 
@@ -425,10 +410,9 @@ between errors and source code.
 @end defun
 
 @defun rinari-test
-Test the current ruby function.  If current function is not a
-test, then try to jump to the related test using `toggle-buffer'.
-Dump output to a compilation buffer allowing jumping between
-errors and source code.
+Test the current ruby function.  If current function is not a test, then
+try to jump to the related test using `rinari-find-test'.  Dump output
+to a compilation buffer allowing jumping between errors and source code.
 @end defun
 
 @node Miscellaneous, Add Ons, Execution, Top
