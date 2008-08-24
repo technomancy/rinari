@@ -226,6 +226,10 @@ don't include an '='."
   (insert "<%") (unless no-equals (insert "=")) (insert "  %>")
   (backward-char 3))
 
+(defvar rinari-rgrep-file-endings
+  "*.rb *.*"
+  "Ending of files to search for matches using `rinari-rgrep'")
+
 (defun rinari-rgrep (&optional arg)
   "Search through the rails project for a string or `regexp'.
 With optional prefix argument just run `rgrep'."
@@ -233,7 +237,7 @@ With optional prefix argument just run `rgrep'."
   (grep-compute-defaults)
   (if arg (call-interactively 'rgrep)
     (funcall 'rgrep (read-from-minibuffer "search for: ")
-	     "*.rb *.rhtml *.yml *.erb" (rinari-root))))
+	     rinari-rgrep-file-endings (rinari-root))))
 
 ;;--------------------------------------------------------------------
 ;; rinari movement using jump.el
