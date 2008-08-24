@@ -1,3 +1,3 @@
 [submodule "util/jump"]
 	path = util/jump
-	url = git@github.com:eschulte/jump.el.git
+	url = git://github.com/eschulte/jump.el.git
