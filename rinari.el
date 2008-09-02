@@ -344,8 +344,8 @@ renders and redirects to find the final controller or view."
 			  (match-string 1 raw-file))) ;; controller
 	       (raw-method (ruby-add-log-current-method))
 	       (method (and file raw-method ;; action
-			    (string-match "#\\(.*\\)" method)
-			    (match-string 1 method))))
+			    (string-match "#\\(.*\\)" raw-method)
+			    (match-string 1 raw-method))))
 	  (if (and file method) (rinari-follow-controller-and-action file method))))
                                                . "app/views/\\1/\\2\\..*")
      ("app/helpers/\\1_helper.rb"              . "app/views/\\1/.*")
