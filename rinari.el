@@ -337,12 +337,16 @@ renders and redirects to find the final controller or view."
     "v"
     (("app/models/\\1.rb"                      . "app/views/\\1/.*")
      ((lambda () ;; find the controller/view
-	(rinari-follow-controller-and-action
-	 (let ((file (file-name-nondirectory (buffer-file-name))))
-	   (and (string-match "^\\(.*\\)_controller.rb" file)
-		(match-string 1 file)));; controller
-	 (let ((method (ruby-add-log-current-method))) ;; action
-	   (and (string-match "#\\(.*\\)" method) (match-string 1 method)))))
+	(let* ((raw-file (and (buffer-file-name)
+			      (file-name-nondirectory (buffer-file-name))))
+	       (file (and raw-file
+			  (string-match "^\\(.*\\)_controller.rb" raw-file)
+			  (match-string 1 raw-file))) ;; controller
+	       (raw-method (ruby-add-log-current-method))
+	       (method (and file raw-method ;; action
+			    (string-match "#\\(.*\\)" method)
+			    (match-string 1 method))))
+	  (if (and file method) (rinari-follow-controller-and-action file method))))
                                                . "app/views/\\1/\\2\\..*")
      ("app/helpers/\\1_helper.rb"              . "app/views/\\1/.*")
      ("db/migrate/.*create_\\1.rb"             . "app/views/\\1/.*")
