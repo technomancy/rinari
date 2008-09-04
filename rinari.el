@@ -58,11 +58,13 @@
 
 (defcustom rinari-browse-url-func
   'browse-url
-  "`browse-url' function used by `rinari-browse-view'.")
+  "`browse-url' function used by `rinari-browse-view'."
+  :group 'rinari)
 
 (defcustom rinari-tags-file-name
   "TAGS"
-  "Path to your TAGS file inside of your rails project.  See `tags-file-name'.")
+  "Path to your TAGS file inside of your rails project.  See `tags-file-name'."
+  :group 'rinari)
 
 (defvar rinari-minor-mode-hook nil
   "*Hook for customising Rinari.")
