@@ -18,7 +18,7 @@ see
 - [[http://bashdb.sourceforge.net/ruby-debug.html#SEC_Top]]
 ** DONE snippets
 see http://github.com/eschulte/yasnippets-rails/tree/master
-* PARTIAL full test coverage [1/2]
+* PARTIAL full test coverage [0/1]
 - [X] movement tests
 - [-] compilation tests
   - [X] console
@@ -26,6 +26,8 @@ see http://github.com/eschulte/yasnippets-rails/tree/master
   - [X] test
   - [ ] sql
   - [ ] script
+
+switch from using elunit.el to ert.el for testing
 
 * MAYBE inf-ruby enhancement
 
@@ -55,7 +57,7 @@ and another
 
 ugh
 
-* DONE rinari movement [4/4]
+* PARTIAL rinari movement [4/5]
 
 From anywhere, get to the related model/controller/test/view
 
@@ -72,6 +74,7 @@ pending...
 - [X] look at a better keybinding setup
 - [X] rails2 style view names
 - [X] code refactor:
+- [ ] regexps in method names
 
 ** code refactor
 
@@ -341,4 +344,5 @@ easy enough
 
 
  LocalWords:  elsif elseif keybinding
+
 
