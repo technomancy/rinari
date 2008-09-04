@@ -174,8 +174,8 @@ from your conf/database.sql file."
 	  (pop-to-buffer sql-buffer)
 	(let* ((database-alist (save-excursion
 				 (with-temp-buffer
-				   (insert-file (concat (rinari-root)
-							"/config/database.yml"))
+				   (insert-file-contents (concat (rinari-root)
+                                                                 "/config/database.yml"))
 				   (goto-char (point-min))
 				   (re-search-forward (concat "^" environment ":"))
 				   (rinari-parse-yaml))))
