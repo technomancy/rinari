@@ -1,9 +1,23 @@
-;;;
-;;;  ruby-mode.el -
-;;;
-;;;  $Author$
-;;;  created at: Fri Feb  4 14:49:13 JST 1994
-;;;
+;;; ruby-mode.el --- Major mode for editing Ruby files
+
+;; Copyright (C) 1994-2008 Yukihiro Matsumoto, Nobuyoshi Nakada
+
+;; Authors: Yukihiro Matsumoto, Nobuyoshi Nakada
+;; Created: Fri Feb  4 14:49:13 JST 1994
+;; Keywords: languages
+
+;; This file is not yet part of GNU Emacs.
+
+;;; Commentary:
+
+;; Provides font-locking, indentation support, and navigation for Ruby code.
+
+;;; Todo:
+
+;; set auto-mode-alist and interpreter-mode-alist with autoload?
+;; various docstrings labelled below with TODOs
+
+;;; Code:
 
 (defconst ruby-mode-revision "$Revision$"
   "Ruby mode revision string.")
@@ -23,7 +37,7 @@
 
 (defconst ruby-non-block-do-re
   (concat (regexp-opt '("while" "until" "for" "rescue") t) "\\_>")
-  "Regexp to match")
+  "Regexp to match keywords that nest without blocks.")
 
 (defconst ruby-indent-beg-re
   (concat "\\(\\s *" (regexp-opt '("class" "module" "def") t) "\\)"
@@ -52,7 +66,7 @@
 
 (defconst ruby-block-ops
   '("and" "or" "not")
-  "Block operators.")
+  "Regexp to match boolean keywords.")
 
 (defconst ruby-block-hanging-re
   (regexp-opt (append ruby-modifier-beg-keywords ruby-block-op-keywords))
@@ -67,6 +81,7 @@
   "^\\([ \t]+\\)?\\(.*\\)\\(.\\)$")
 
 (defun ruby-here-doc-end-match ()
+  "Return a regexp to find the end of the last matched heredoc."
   (concat "^"
           (if (match-string 2) "[ \t]*" nil)
           (regexp-quote
@@ -187,7 +202,7 @@ Also ignores spaces after parenthesis when 'space."
   :options '(t nil space) :group 'ruby)
 
 (defcustom ruby-encoding-map '((shift_jis . cp932) (shift-jis . cp932))
-  "Alist to map encoding name from emacs to ruby."
+  "Alist to map encoding name from Emacs to Ruby."
   :group 'ruby)
 
 (defcustom ruby-use-encoding-map t
@@ -1346,3 +1361,4 @@ buffer position `limit' or the end of the buffer."
 
 
 (provide 'ruby-mode)
+;;; ruby-mode.el ends here
