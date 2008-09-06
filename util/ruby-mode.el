@@ -90,6 +90,7 @@
                (match-string 6)))))
 
 (defun ruby-here-doc-beg-match ()
+  "TODO: document." ;; Nathan?
   (let ((contents (regexp-quote (concat (match-string 2) (match-string 3)))))
     (concat "<<"
             (let ((match (match-string 1)))
@@ -211,6 +212,7 @@ Also ignores spaces after parenthesis when 'space."
 
 (eval-when-compile (require 'cl))
 (defun ruby-imenu-create-index-in-block (prefix beg end)
+  "Create an imenu index of methods inside a block."
   (let ((index-alist '())
         name next pos decl sing)
     (goto-char beg)
@@ -322,7 +324,7 @@ Also ignores spaces after parenthesis when 'space."
 ;;;###autoload
 (defun ruby-mode ()
   "Major mode for editing ruby scripts.
-\\[ruby-indent-command] properly indents subexpressions of multi-line
+\\[ruby-indent-line] properly indents subexpressions of multi-line
 class, module, def, if, while, for, do, and case statements, taking
 nesting into account.
 
@@ -359,20 +361,19 @@ The variable ruby-indent-level controls the amount of indentation.
     (run-hooks 'ruby-mode-hook)))
 
 (defun ruby-current-indentation ()
+    "Return the indentation level of current line."
   (save-excursion
     (beginning-of-line)
     (back-to-indentation)
     (current-column)))
 
 (defun ruby-indent-line (&optional flag)
-  "Correct indentation of the current ruby line."
+  "Correct the indentation of the current ruby line."
+  (interactive)
   (ruby-indent-to (ruby-calculate-indent)))
 
-(defun ruby-indent-command ()
-  (interactive)
-  (ruby-indent-line t))
-
 (defun ruby-indent-to (x)
+  "TODO: document."
   (if x
       (let (shift top beg)
         (and (< x 0) (error "invalid nest"))
@@ -394,6 +395,7 @@ The variable ruby-indent-level controls the amount of indentation.
           (move-to-column (+ x shift))))))
 
 (defun ruby-special-char-p (&optional pnt)
+  "TODO: document."
   (setq pnt (or pnt (point)))
   (let ((c (char-before pnt)) (b (and (< (point-min) pnt) (char-before (1- pnt)))))
     (cond ((or (eq c ??) (eq c ?$)))
@@ -401,6 +403,7 @@ The variable ruby-indent-level controls the amount of indentation.
           ((eq c ?\\) (eq b ??)))))
 
 (defun ruby-expr-beg (&optional option)
+  "TODO: document."
   (save-excursion
     (store-match-data nil)
     (let ((space (skip-chars-backward " \t"))
@@ -437,6 +440,7 @@ The variable ruby-indent-level controls the amount of indentation.
                   (t nil)))))))))
 
 (defun ruby-forward-string (term &optional end no-error expand)
+  "TODO: document."
   (let ((n 1) (c (string-to-char term))
         (re (if expand
                 (concat "[^\\]\\(\\\\\\\\\\)*\\([" term "]\\|\\(#{\\)\\)")
@@ -452,6 +456,7 @@ The variable ruby-indent-level controls the amount of indentation.
           ((error "unterminated string")))))
 
 (defun ruby-deep-indent-paren-p (c)
+    "TODO: document."
   (cond ((listp ruby-deep-indent-paren)
          (let ((deep (assoc c ruby-deep-indent-paren)))
            (cond (deep
@@ -462,6 +467,7 @@ The variable ruby-indent-level controls the amount of indentation.
         ((eq c ?\( ) ruby-deep-arglist)))
 
 (defun ruby-parse-partial (&optional end in-string nest depth pcol indent)
+    "TODO: document throughout function body."
   (or depth (setq depth 0))
   (or indent (setq indent 0))
   (when (re-search-forward ruby-delimiter end 'move)
@@ -666,6 +672,7 @@ The variable ruby-indent-level controls the amount of indentation.
   (list in-string nest depth pcol))
 
 (defun ruby-parse-region (start end)
+  "TODO: document."
   (let (state)
     (save-excursion
       (if start
@@ -683,9 +690,11 @@ The variable ruby-indent-level controls the amount of indentation.
           )))
 
 (defun ruby-indent-size (pos nest)
+    "TODO: document."
   (+ pos (* (or nest 1) ruby-indent-level)))
 
 (defun ruby-calculate-indent (&optional parse-start)
+    "TODO: document througout function body."
   (save-excursion
     (beginning-of-line)
     (let ((indent-point (point))
@@ -845,6 +854,7 @@ The variable ruby-indent-level controls the amount of indentation.
         indent))))
 
 (defun ruby-electric-brace (arg)
+  "TODO: document."
   (interactive "P")
   (insert-char last-command-char 1)
   (ruby-indent-line t)
@@ -853,6 +863,7 @@ The variable ruby-indent-level controls the amount of indentation.
 
 (eval-when-compile
   (defmacro defun-region-command (func args &rest body)
+    "TODO: document."
     (let ((intr (car body)))
       (when (featurep 'xemacs)
         (if (stringp intr) (setq intr (cadr body)))
@@ -887,6 +898,7 @@ An end of a defun is found by moving forward from the beginning of one."
   (forward-line 1))
 
 (defun ruby-move-to-block (n)
+  "TODO: document."
   (let (start pos done down)
     (setq start (ruby-calculate-indent))
     (setq down (looking-at (if (< n 0) ruby-block-end-re
@@ -927,6 +939,7 @@ An end of a defun is found by moving forward from the beginning of one."
   (ruby-move-to-block (or arg 1)))
 
 (defun-region-command ruby-forward-sexp (&optional cnt)
+  "TODO: document."
   (interactive "p")
   (if (and (numberp cnt) (< cnt 0))
       (ruby-backward-sexp (- cnt))
@@ -966,6 +979,7 @@ An end of a defun is found by moving forward from the beginning of one."
       i)))
 
 (defun-region-command ruby-backward-sexp (&optional cnt)
+  "TODO: document."
   (interactive "p")
   (if (and (numberp cnt) (< cnt 0))
       (ruby-forward-sexp (- cnt))
@@ -1009,6 +1023,7 @@ An end of a defun is found by moving forward from the beginning of one."
       i)))
 
 (defun ruby-reindent-then-newline-and-indent ()
+  "TODO: document."
   (interactive "*")
   (newline)
   (save-excursion
@@ -1020,6 +1035,7 @@ An end of a defun is found by moving forward from the beginning of one."
 (fset 'ruby-encomment-region (symbol-function 'comment-region))
 
 (defun ruby-decomment-region (beg end)
+  "Remove comment markers from the region."
   (interactive "r")
   (save-excursion
     (goto-char beg)
@@ -1029,6 +1045,7 @@ An end of a defun is found by moving forward from the beginning of one."
         (ruby-indent-line)))))
 
 (defun ruby-insert-end ()
+  "Insert \"end\" at point and reindent current line."
   (interactive)
   (insert "end")
   (ruby-indent-line t)
@@ -1127,6 +1144,7 @@ balanced expression is found."
               (if mlist (concat mlist mname) mname)
             mlist)))))
 
+;; TODO: can we assume font-lock is available? I think yes.
 (cond
  ((featurep 'font-lock)
   (or (boundp 'font-lock-variable-name-face)
@@ -1156,6 +1174,7 @@ balanced expression is found."
           (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax))))
 
   (defun ruby-in-non-here-doc-string-p ()
+    "TODO: document."
     (let ((syntax (syntax-ppss)))
       (or (nth 4 syntax)
           ;; In a string *without* a generic delimiter
@@ -1164,6 +1183,7 @@ balanced expression is found."
           (numberp (nth 3 syntax)))))
 
   (defun ruby-in-here-doc-p ()
+    "TODO: document."
     (save-excursion
       (let ((old-point (point)))
         (beginning-of-line)
@@ -1201,6 +1221,7 @@ buffer position `limit' or the end of the buffer."
           (point)))))
 
   (defun ruby-here-doc-beg-syntax ()
+    "TODO: document."
     (save-excursion
       (goto-char (match-beginning 0))
       (unless (or (ruby-in-non-here-doc-string-p)
@@ -1208,6 +1229,7 @@ buffer position `limit' or the end of the buffer."
         (string-to-syntax "|"))))
 
   (defun ruby-here-doc-end-syntax ()
+    "TODO: document."
     (let ((pss (syntax-ppss)))
       (when (eq (syntax-ppss-context pss) 'string)
         (save-excursion
@@ -1229,6 +1251,7 @@ buffer position `limit' or the end of the buffer."
               . ruby-font-lock-syntactic-keywords))))
 
   (defun ruby-font-lock-docs (limit)
+    "TODO: document."
     (if (re-search-forward "^=begin\\(\\s \\|$\\)" limit t)
         (let (beg)
           (beginning-of-line)
@@ -1240,6 +1263,7 @@ buffer position `limit' or the end of the buffer."
                 t)))))
 
   (defun ruby-font-lock-maybe-docs (limit)
+    "TODO: document."
     (let (beg)
       (save-excursion
         (if (and (re-search-backward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
@@ -1340,6 +1364,7 @@ buffer position `limit' or the end of the buffer."
      )
     "*Additional expressions to highlight in ruby mode."))
 
+ ;; TODO: remove.
  ((featurep 'hilit19)
   (hilit-set-mode-patterns
    'ruby-mode
