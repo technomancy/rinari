@@ -46,10 +46,14 @@
 ;; See TODO file in this directory.
 
 ;;; Code:
-(let ((this-dir (file-name-directory (or load-file-name buffer-file-name))))
+(let* ((this-dir (file-name-directory (or load-file-name buffer-file-name)))
+       (util-dir (file-name-as-directory
+		  (expand-file-name "util" this-dir)))
+       (jump-dir (file-name-as-directory
+		  (expand-file-name "jump" util-dir))))
   (add-to-list 'load-path this-dir)
-  (add-to-list 'load-path (expand-file-name "util" this-dir))
-  (add-to-list 'load-path (expand-file-name "util/jump" this-dir)))
+  (add-to-list 'load-path util-dir)
+  (add-to-list 'load-path jump-dir))
 (require 'ruby-mode)
 (require 'inf-ruby)
 (require 'ruby-compilation)
@@ -92,12 +96,14 @@
       (setf alist (cons (cons (match-string 1) (match-string 2)) alist)))
     alist))
 
-(defun rinari-root (&optional dir)
+(defun rinari-root (&optional dir home)
   (or dir (setq dir default-directory))
-  (if (file-exists-p (concat dir "config/environment.rb"))
+  (if (file-exists-p (expand-file-name
+		      "environment.rb" (expand-file-name "config" dir)))
       dir
-    (unless (equal dir "/")
-      (rinari-root (expand-file-name (concat dir "../"))))))
+    (let ((new-dir (expand-file-name (file-name-as-directory "..") dir)))
+      (unless (string-match "\\(^[[:alpha:]]:/$\\|^/$\\)" dir)
+	(rinari-root new-dir)))))
 
 ;;--------------------------------------------------------------------------------
 ;; user functions
@@ -153,12 +159,15 @@ argument allows editing of the test command arguments."
 history and links between errors and source code.  With optional
 prefix argument allows editing of the console command arguments."
   (interactive "P")
-  (let* ((script (concat (rinari-root) "script/console"))
+  (let* ((script ;; (concat (rinari-root) "script/console")
+	  (expand-file-name "console" (file-name-as-directory
+				       (expand-file-name "script" (rinari-root)))))
 	 (command (if edit-cmd-args
 		      (read-string "Run Ruby: " (concat script " "))
 		    script)))
     (run-ruby command)
-    (save-excursion (pop-to-buffer "*ruby*")
+    (save-excursion
+      (pop-to-buffer "*ruby*")
       (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
       (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> ")
       (rinari-launch))))
@@ -174,8 +183,11 @@ from your conf/database.sql file."
 	  (pop-to-buffer sql-buffer)
 	(let* ((database-alist (save-excursion
 				 (with-temp-buffer
-				   (insert-file-contents (concat (rinari-root)
-                                                                 "/config/database.yml"))
+				   (insert-file-contents
+				    (expand-file-name
+				     "database.yml"
+				     (file-name-as-directory
+				      (expand-file-name "config" (rinari-root)))))
 				   (goto-char (point-min))
 				   (re-search-forward (concat "^" environment ":"))
 				   (rinari-parse-yaml))))
@@ -198,28 +210,13 @@ allowing jumping between errors and source code.  With optional
 prefix argument allows editing of the server command arguments."
   (interactive "P")
   (let* ((default-directory (rinari-root))
-	 (script (concat (rinari-root) "script/server"))
+	 (script (expand-file-name "server"
+				   (file-name-as-directory
+				    (expand-file-name "script" (rinari-root)))))
 	 (command (if edit-cmd-args
 		      (read-string "Run Ruby: " (concat script " "))
 		    script)))
     (ruby-run-w/compilation command)))
-
-(defun rinari-browse-url ()
-  "Browse the url of the current view, controller, test, or model
-with `rinari-browse-url-func' which defaults to `browse-url'."
-  (interactive)
-  (unless (equal :view (rinari-whats-my-type))
-    (rinari-find-view))
-  (let* ((path (buffer-file-name))
-	 (route (and (string-match "app/views/\\(.+\\)\.r[ebhtml]+" path)
-		     (match-string 1 path)))
-	 (port (or () ;; guess port (or not)
-		   "3000"))
-	 (server (or () ;; guess server (or not)
-		     "localhost"))
-	 (base (concat server ":" port "/" route))
-	 (url (read-from-minibuffer "url: " (concat base "/"))))
-    (eval (list rinari-browse-url-func url))))
 
 (defun rinari-insert-erb-skeleton (no-equals)
   "Insert an erb skeleton at point, with optional prefix argument
@@ -333,7 +330,7 @@ renders and redirects to find the final controller or view."
      ("test/fixtures/\\1.yml"                  . "app/controllers/\\1_controller.rb")
      (t                                        . "app/controllers/"))
     (lambda (path)
-      (rinari-generate "model"
+      (rinari-generate "controller"
 		       (and (string-match ".*/\\(.+?\\)_controller\.rb" path)
 			    (match-string 1 path)))))
    (view
@@ -447,11 +444,10 @@ renders and redirects to find the final controller or view."
 	   ,(format "\C-c'%s" key) ,func)))
 
 (defvar rinari-minor-mode-keybindings
-  '(("s" . 'rinari-script)
+  '(("s" . 'rinari-script)              ("q" . 'rinari-sql)
     ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
     ("r" . 'rinari-rake)                ("c" . 'rinari-console)
-    ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep)
-    ("b" . 'rinari-browse-url)          ("q" . 'rinari-sql))
+    ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep))
   "alist mapping of keys to functions in `rinari-minor-mode'")
 
 (mapcar (lambda (el) (rinari-bind-key-to-func (car el) (cdr el)))
@@ -466,11 +462,12 @@ renders and redirects to find the final controller or view."
 otherwise turn `rinari-minor-mode' off if it is on."
   (interactive)
   (let* ((root (rinari-root)) (r-tags-path (concat root rinari-tags-file-name)))
-    (when root
-      (set (make-local-variable 'tags-file-name)
-           (and (file-exists-p r-tags-path) r-tags-path))
-      (run-hooks 'rinari-minor-mode-hook)
-      (rinari-minor-mode t))))
+    (if root (progn
+	       (set (make-local-variable 'tags-file-name)
+		    (and (file-exists-p r-tags-path) r-tags-path))
+	       (run-hooks 'rinari-minor-mode-hook)
+	       (rinari-minor-mode t))
+      (if rinari-minor-mode (rinari-minor-mode)))))
 
 (defvar rinari-major-modes
   '('find-file-hook 'mumamo-after-change-major-mode-hook 'dired-mode-hook)

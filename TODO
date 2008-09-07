@@ -18,7 +18,7 @@ see
 - [[http://bashdb.sourceforge.net/ruby-debug.html#SEC_Top]]
 ** DONE snippets
 see http://github.com/eschulte/yasnippets-rails/tree/master
-* PARTIAL full test coverage [0/1]
+* PARTIAL full test coverage (ERT) [0/1]
 - [X] movement tests
 - [-] compilation tests
   - [X] console
