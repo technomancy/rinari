@@ -60,11 +60,6 @@
 (require 'jump)
 (require 'cl)
 
-(defcustom rinari-browse-url-func
-  'browse-url
-  "`browse-url' function used by `rinari-browse-view'."
-  :group 'rinari)
-
 (defcustom rinari-tags-file-name
   "TAGS"
   "Path to your TAGS file inside of your rails project.  See `tags-file-name'."
@@ -224,6 +219,20 @@ don't include an '='."
   (interactive "P")
   (insert "<%") (unless no-equals (insert "=")) (insert "  %>")
   (backward-char 3))
+
+(defun rinari-extract-partial (begin end partial-name)
+  (interactive "r\nsName your partial: ")
+  (let* ((path (buffer-file-name)) ending)
+    (if (string-match "view" path)
+	(let ((ending (and (string-match ".+?\\(\\..*\\)" path)
+			   (match-string 1 path)))
+	      (partial-name
+	       (replace-regexp-in-string "[[:space:]]+" "_" partial-name)))
+	  (kill-region begin end)
+	  (find-file (concat "_" partial-name ending))
+	  (yank) (pop-to-buffer nil)
+	  (insert (concat "<%= render :partial => '" partial-name "' %>\n")))
+      (message "not in a view"))))
 
 (defvar rinari-rgrep-file-endings
   "*.rb *.*"
@@ -447,7 +456,8 @@ renders and redirects to find the final controller or view."
   '(("s" . 'rinari-script)              ("q" . 'rinari-sql)
     ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
     ("r" . 'rinari-rake)                ("c" . 'rinari-console)
-    ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep))
+    ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep)
+    ("x" . 'rinari-extract-partial))
   "alist mapping of keys to functions in `rinari-minor-mode'")
 
 (mapcar (lambda (el) (rinari-bind-key-to-func (car el) (cdr el)))
