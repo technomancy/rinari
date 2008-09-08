@@ -85,6 +85,11 @@ like toggle, but instead of elements like
 
 Done see http://github.com/eschulte/jump.el/tree/master
 
+* TODO create a screencast
+promotion!!
+
+- [[http://www.emacswiki.org/cgi-bin/wiki/EmacsScreencasts]]
+
 * DONE add yaml,css,javascript,ruby pointers to the documentation
 * CANCELLED adjust eshell/shell environment to highlight ruby errors
 not sure this is possible, at least not easily
