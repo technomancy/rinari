@@ -1158,8 +1158,8 @@ balanced expression is found."
     ("\\(^\\|[=(,~?:;<>]\\|\\(^\\|\\s \\)\\(if\\|elsif\\|unless\\|while\\|until\\|when\\|and\\|or\\|&&\\|||\\)\\|g?sub!?\\|scan\\|split!?\\)\\s *\\(/\\)[^/\n\\\\]*\\(\\\\.[^/\n\\\\]*\\)*\\(/\\)"
      (4 (7 . ?/))
      (6 (7 . ?/)))
-    ("^\\(=\\)begin\\(\\s \\|$\\)" 1 (7 . nil))
-    ("^\\(=\\)end\\(\\s \\|$\\)" 1 (7 . nil))
+    ("^=en\\(d\\)\\_>" 1 "!")
+    ("^\\(=\\)begin\\_>" 1 (ruby-comment-beg-syntax))
     ;; Currently, the following case is highlighted incorrectly:
     ;;
     ;;   <<FOO
@@ -1182,6 +1182,15 @@ balanced expression is found."
      (ruby-here-doc-beg-syntax))
     (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax)))
   "Syntactic keywords for ruby-mode. See `font-lock-syntactic-keywords'.")
+
+(defun ruby-comment-beg-syntax ()
+  "Returns the syntax cell for a the first character of a =begin.
+See the definition of `ruby-font-lock-syntactic-keywords'.
+
+This returns a comment-delimiter cell as long as the =begin
+isn't in a string or another comment."
+  (when (not (nth 3 (syntax-ppss)))
+    (string-to-syntax "!")))
 
 (defun ruby-in-non-here-doc-string-p ()
   "Returns whether or not the point is in a comment or
@@ -1276,38 +1285,12 @@ See the definition of `ruby-font-lock-syntactic-keywords'."
            (font-lock-syntactic-keywords
             . ruby-font-lock-syntactic-keywords))))
 
-(defun ruby-font-lock-docs (limit)
-  "TODO: document."
-  (if (re-search-forward "^=begin\\(\\s \\|$\\)" limit t)
-      (let (beg)
-        (beginning-of-line)
-        (setq beg (point))
-        (forward-line 1)
-        (if (re-search-forward "^=end\\(\\s \\|$\\)" limit t)
-            (progn
-              (set-match-data (list beg (point)))
-              t)))))
-
-(defun ruby-font-lock-maybe-docs (limit)
-  "TODO: document."
-  (let (beg)
-    (save-excursion
-      (if (and (re-search-backward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
-               (string= (match-string 1) "begin"))
-          (progn
-            (beginning-of-line)
-            (setq beg (point)))))
-    (if (and beg (and (re-search-forward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
-                      (string= (match-string 1) "end")))
-        (progn
-          (set-match-data (list beg (point)))
-          t)
-      nil)))
-
 (defvar ruby-font-lock-syntax-table
-  (let* ((tbl (copy-syntax-table ruby-mode-syntax-table)))
+  (let ((tbl (copy-syntax-table ruby-mode-syntax-table)))
     (modify-syntax-entry ?_ "w" tbl)
-    tbl))
+    tbl)
+  "The syntax table to use for fontifying ruby-mode buffers.
+See `font-lock-syntax-table'.")
 
 (defconst ruby-font-lock-keywords
   (list
@@ -1371,11 +1354,6 @@ See the definition of `ruby-font-lock-syntactic-keywords'."
      1 font-lock-variable-name-face)
    '("\\(\\$\\|@\\|@@\\)\\(\\w\\|_\\)+"
      0 font-lock-variable-name-face)
-   ;; embedded document
-   '(ruby-font-lock-docs
-     0 font-lock-comment-face t)
-   '(ruby-font-lock-maybe-docs
-     0 font-lock-comment-face t)
    ;; general delimited string
    '("\\(^\\|[[ \t\n<+(,=]\\)\\(%[xrqQwW]?\\([^<[{(a-zA-Z0-9 \n]\\)[^\n\\\\]*\\(\\\\.[^\n\\\\]*\\)*\\(\\3\\)\\)"
      (2 font-lock-string-face))
