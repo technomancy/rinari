@@ -147,7 +147,7 @@ This should only be called after matching against `ruby-here-doc-end-re'."
     (define-key map "\M-\C-q" 'ruby-indent-exp)
     (define-key map "\t" 'ruby-indent-line)
     (define-key map "\C-c\C-e" 'ruby-insert-end)
-    (define-key map "\C-j" 'ruby-reindent-then-newline-and-indent)
+    (define-key map "\C-j" 'reindent-then-newline-and-indent)
     (define-key map "\C-m" 'newline)
     map)
   "Keymap used in ruby-mode.")
@@ -1020,28 +1020,6 @@ An end of a defun is found by moving forward from the beginning of one."
             (setq i (1- i)))
         ((error)))
       i)))
-
-(defun ruby-reindent-then-newline-and-indent ()
-  "TODO: document."
-  (interactive "*")
-  (newline)
-  (save-excursion
-    (end-of-line 0)
-    (indent-according-to-mode)
-    (delete-region (point) (progn (skip-chars-backward " \t") (point))))
-  (indent-according-to-mode))
-
-(fset 'ruby-encomment-region (symbol-function 'comment-region))
-
-(defun ruby-decomment-region (beg end)
-  "Remove comment markers from the region."
-  (interactive "r")
-  (save-excursion
-    (goto-char beg)
-    (while (re-search-forward "^\\([ \t]*\\)#" end t)
-      (replace-match "\\1" nil nil)
-      (save-excursion
-        (ruby-indent-line)))))
 
 (defun ruby-insert-end ()
   "Insert \"end\" at point and reindent current line."
