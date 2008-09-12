@@ -1142,265 +1142,239 @@ balanced expression is found."
               (if mlist (concat mlist mname) mname)
             mlist)))))
 
-;; TODO: can we assume font-lock is available? I think yes.
-(cond
- ((featurep 'font-lock)
-  (or (boundp 'font-lock-variable-name-face)
-      (setq font-lock-variable-name-face font-lock-type-face))
+(defconst ruby-font-lock-syntactic-keywords
+  `(;; #{ }, #$hoge, #@foo are not comments
+    ("\\(#\\)[{$@]" 1 (1 . nil))
+    ;; the last $', $", $` in the respective string is not variable
+    ;; the last ?', ?", ?` in the respective string is not ascii code
+    ("\\(^\\|[\[ \t\n<+\(,=]\\)\\(['\"`]\\)\\(\\\\.\\|\\2\\|[^'\"`\n\\\\]\\)*?\\\\?[?$]\\(\\2\\)"
+     (2 (7 . nil))
+     (4 (7 . nil)))
+    ;; $' $" $` .... are variables
+    ;; ?' ?" ?` are ascii codes
+    ("\\(^\\|[^\\\\]\\)\\(\\\\\\\\\\)*[?$]\\([#\"'`]\\)" 3 (1 . nil))
+    ;; regexps
+    ("\\(^\\|[=(,~?:;<>]\\|\\(^\\|\\s \\)\\(if\\|elsif\\|unless\\|while\\|until\\|when\\|and\\|or\\|&&\\|||\\)\\|g?sub!?\\|scan\\|split!?\\)\\s *\\(/\\)[^/\n\\\\]*\\(\\\\.[^/\n\\\\]*\\)*\\(/\\)"
+     (4 (7 . ?/))
+     (6 (7 . ?/)))
+    ("^\\(=\\)begin\\(\\s \\|$\\)" 1 (7 . nil))
+    ("^\\(=\\)end\\(\\s \\|$\\)" 1 (7 . nil))
+    (,(concat ruby-here-doc-beg-re ".*\\(\n\\)")
+     ,(+ 1 (regexp-opt-depth ruby-here-doc-beg-re))
+     (ruby-here-doc-beg-syntax))
+    (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax)))
+  "Syntactic keywords for ruby-mode. See `font-lock-syntactic-keywords'.")
 
-  (setq ruby-font-lock-syntactic-keywords
-        `(
-          ;; #{ }, #$hoge, #@foo are not comments
-          ("\\(#\\)[{$@]" 1 (1 . nil))
-          ;; the last $', $", $` in the respective string is not variable
-          ;; the last ?', ?", ?` in the respective string is not ascii code
-          ("\\(^\\|[\[ \t\n<+\(,=]\\)\\(['\"`]\\)\\(\\\\.\\|\\2\\|[^'\"`\n\\\\]\\)*?\\\\?[?$]\\(\\2\\)"
-           (2 (7 . nil))
-           (4 (7 . nil)))
-          ;; $' $" $` .... are variables
-          ;; ?' ?" ?` are ascii codes
-          ("\\(^\\|[^\\\\]\\)\\(\\\\\\\\\\)*[?$]\\([#\"'`]\\)" 3 (1 . nil))
-          ;; regexps
-          ("\\(^\\|[=(,~?:;<>]\\|\\(^\\|\\s \\)\\(if\\|elsif\\|unless\\|while\\|until\\|when\\|and\\|or\\|&&\\|||\\)\\|g?sub!?\\|scan\\|split!?\\)\\s *\\(/\\)[^/\n\\\\]*\\(\\\\.[^/\n\\\\]*\\)*\\(/\\)"
-           (4 (7 . ?/))
-           (6 (7 . ?/)))
-          ("^\\(=\\)begin\\(\\s \\|$\\)" 1 (7 . nil))
-          ("^\\(=\\)end\\(\\s \\|$\\)" 1 (7 . nil))
-          (,(concat ruby-here-doc-beg-re ".*\\(\n\\)")
-           ,(+ 1 (regexp-opt-depth ruby-here-doc-beg-re))
-           (ruby-here-doc-beg-syntax))
-          (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax))))
-
-  (defun ruby-in-non-here-doc-string-p ()
-    "Returns whether or not the point is in a comment or
+(defun ruby-in-non-here-doc-string-p ()
+  "Returns whether or not the point is in a comment or
 a string that's not a heredoc.
 
 This function assumes that all strings with generic delimiters
 are heredocs. In ruby-mode, regexps also use generic delimiters,
 so text in them will count as text in heredocs for the purpose
 of this function. See `parse-partial-sexp'."
-    ;; TODO: We may be able to make this more accurate
-    ;; by looking at the character at (nth 3 syntax)
-    (let ((syntax (syntax-ppss)))
-      (or (nth 4 syntax)
-          (numberp (nth 3 syntax)))))
+  ;; TODO: We may be able to make this more accurate
+  ;; by looking at the character at (nth 3 syntax)
+  (let ((syntax (syntax-ppss)))
+    (or (nth 4 syntax)
+        (numberp (nth 3 syntax)))))
 
-  (defun ruby-in-here-doc-p ()
-    "Returns whether or not the point is in a heredoc."
-    (save-excursion
-      (let ((old-point (point)) (case-fold-search nil))
-        (beginning-of-line)
-        (catch 'found-beg
-          (while (re-search-backward ruby-here-doc-beg-re nil t)
-            (if (not (or (syntax-ppss-context (syntax-ppss))
-                         (ruby-here-doc-find-end old-point)))
-                (throw 'found-beg t)))))))
+(defun ruby-in-here-doc-p ()
+  "Returns whether or not the point is in a heredoc."
+  (save-excursion
+    (let ((old-point (point)) (case-fold-search nil))
+      (beginning-of-line)
+      (catch 'found-beg
+        (while (re-search-backward ruby-here-doc-beg-re nil t)
+          (if (not (or (syntax-ppss-context (syntax-ppss))
+                       (ruby-here-doc-find-end old-point)))
+              (throw 'found-beg t)))))))
 
-  (defun ruby-here-doc-find-end (&optional limit)
-    "Expects the point to be on a line with one or more heredoc
+(defun ruby-here-doc-find-end (&optional limit)
+  "Expects the point to be on a line with one or more heredoc
 openers. Returns the buffer position at which all heredocs on the
 line are terminated, or nil if they aren't terminated before the
 buffer position `limit' or the end of the buffer."
-    (save-excursion
-      (beginning-of-line)
-      (catch 'done
-        (let ((eol (save-excursion (end-of-line) (point)))
-              (case-fold-search nil)
-              ;; Fake match data such that (match-end 0) is at eol
-              (end-match-data (progn (looking-at ".*$") (match-data)))
-              beg-match-data end-re)
-          (while (re-search-forward ruby-here-doc-beg-re eol t)
-            (setq beg-match-data (match-data))
-            (setq end-re (ruby-here-doc-end-match))
+  (save-excursion
+    (beginning-of-line)
+    (catch 'done
+      (let ((eol (save-excursion (end-of-line) (point)))
+            (case-fold-search nil)
+            ;; Fake match data such that (match-end 0) is at eol
+            (end-match-data (progn (looking-at ".*$") (match-data)))
+            beg-match-data end-re)
+        (while (re-search-forward ruby-here-doc-beg-re eol t)
+          (setq beg-match-data (match-data))
+          (setq end-re (ruby-here-doc-end-match))
 
-            (set-match-data end-match-data)
-            (goto-char (match-end 0))
-            (unless (re-search-forward end-re limit t) (throw 'done nil))
-            (setq end-match-data (match-data))
-
-            (set-match-data beg-match-data)
-            (goto-char (match-end 0)))
           (set-match-data end-match-data)
           (goto-char (match-end 0))
-          (point)))))
+          (unless (re-search-forward end-re limit t) (throw 'done nil))
+          (setq end-match-data (match-data))
 
-  (defun ruby-here-doc-beg-syntax ()
-    "Returns the syntax cell for a line that may begin a heredoc.
+          (set-match-data beg-match-data)
+          (goto-char (match-end 0)))
+        (set-match-data end-match-data)
+        (goto-char (match-end 0))
+        (point)))))
+
+(defun ruby-here-doc-beg-syntax ()
+  "Returns the syntax cell for a line that may begin a heredoc.
 See the definition of `ruby-font-lock-syntactic-keywords'.
 
 This sets the syntax cell for the newline ending the line
 containing the heredoc beginning so that cases where multiple
 heredocs are started on one line are handled correctly."
-    (save-excursion
-      (goto-char (match-beginning 0))
-      (unless (or (ruby-in-non-here-doc-string-p)
-                  (ruby-in-here-doc-p))
-        (string-to-syntax "|"))))
+  (save-excursion
+    (goto-char (match-beginning 0))
+    (unless (or (ruby-in-non-here-doc-string-p)
+                (ruby-in-here-doc-p))
+      (string-to-syntax "|"))))
 
-  (defun ruby-here-doc-end-syntax ()
-    "Returns the syntax cell for a line that may end a heredoc.
+(defun ruby-here-doc-end-syntax ()
+  "Returns the syntax cell for a line that may end a heredoc.
 See the definition of `ruby-font-lock-syntactic-keywords'."
-    (let ((pss (syntax-ppss)) (case-fold-search nil))
-      ;; If we aren't in a string, we definitely aren't ending a heredoc,
-      ;; so we can just give up.
-      ;; This means we aren't doing a full-document search
-      ;; every time we enter a character.
-      (when (eq (syntax-ppss-context pss) 'string)
-        (save-excursion
-          (goto-char (nth 8 pss))
-          (let ((eol (point)))
-            (beginning-of-line)
-            (if (and (re-search-forward (ruby-here-doc-beg-match) eol t) ; If there is a heredoc that matches this line...
-                     (null (syntax-ppss-context (syntax-ppss))) ; And that's not inside a heredoc/string/comment...
-                     (progn (goto-char (match-end 0)) ; And it's the last heredoc on its line...
-                            (not (re-search-forward ruby-here-doc-beg-re eol t))))
-                (string-to-syntax "|")))))))
-
-  (if (featurep 'xemacs)
-      (put 'ruby-mode 'font-lock-defaults
-           '((ruby-font-lock-keywords)
-             nil nil nil
-             beginning-of-line
-             (font-lock-syntactic-keywords
-              . ruby-font-lock-syntactic-keywords))))
-
-  (defun ruby-font-lock-docs (limit)
-    "TODO: document."
-    (if (re-search-forward "^=begin\\(\\s \\|$\\)" limit t)
-        (let (beg)
-          (beginning-of-line)
-          (setq beg (point))
-          (forward-line 1)
-          (if (re-search-forward "^=end\\(\\s \\|$\\)" limit t)
-              (progn
-                (set-match-data (list beg (point)))
-                t)))))
-
-  (defun ruby-font-lock-maybe-docs (limit)
-    "TODO: document."
-    (let (beg)
+  (let ((pss (syntax-ppss)) (case-fold-search nil))
+    ;; If we aren't in a string, we definitely aren't ending a heredoc,
+    ;; so we can just give up.
+    ;; This means we aren't doing a full-document search
+    ;; every time we enter a character.
+    (when (eq (syntax-ppss-context pss) 'string)
       (save-excursion
-        (if (and (re-search-backward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
-                 (string= (match-string 1) "begin"))
+        (goto-char (nth 8 pss))
+        (let ((eol (point)))
+          (beginning-of-line)
+          (if (and (re-search-forward (ruby-here-doc-beg-match) eol t) ; If there is a heredoc that matches this line...
+                   (null (syntax-ppss-context (syntax-ppss))) ; And that's not inside a heredoc/string/comment...
+                   (progn (goto-char (match-end 0)) ; And it's the last heredoc on its line...
+                          (not (re-search-forward ruby-here-doc-beg-re eol t))))
+              (string-to-syntax "|")))))))
+
+(if (featurep 'xemacs)
+    (put 'ruby-mode 'font-lock-defaults
+         '((ruby-font-lock-keywords)
+           nil nil nil
+           beginning-of-line
+           (font-lock-syntactic-keywords
+            . ruby-font-lock-syntactic-keywords))))
+
+(defun ruby-font-lock-docs (limit)
+  "TODO: document."
+  (if (re-search-forward "^=begin\\(\\s \\|$\\)" limit t)
+      (let (beg)
+        (beginning-of-line)
+        (setq beg (point))
+        (forward-line 1)
+        (if (re-search-forward "^=end\\(\\s \\|$\\)" limit t)
             (progn
-              (beginning-of-line)
-              (setq beg (point)))))
-      (if (and beg (and (re-search-forward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
-                        (string= (match-string 1) "end")))
+              (set-match-data (list beg (point)))
+              t)))))
+
+(defun ruby-font-lock-maybe-docs (limit)
+  "TODO: document."
+  (let (beg)
+    (save-excursion
+      (if (and (re-search-backward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
+               (string= (match-string 1) "begin"))
           (progn
-            (set-match-data (list beg (point)))
-            t)
-        nil)))
+            (beginning-of-line)
+            (setq beg (point)))))
+    (if (and beg (and (re-search-forward "^=\\(begin\\|end\\)\\(\\s \\|$\\)" nil t)
+                      (string= (match-string 1) "end")))
+        (progn
+          (set-match-data (list beg (point)))
+          t)
+      nil)))
 
-  (defvar ruby-font-lock-syntax-table
-    (let* ((tbl (copy-syntax-table ruby-mode-syntax-table)))
-      (modify-syntax-entry ?_ "w" tbl)
-      tbl))
+(defvar ruby-font-lock-syntax-table
+  (let* ((tbl (copy-syntax-table ruby-mode-syntax-table)))
+    (modify-syntax-entry ?_ "w" tbl)
+    tbl))
 
-  (defconst ruby-font-lock-keywords
-    (list
-     ;; functions
-     '("^\\s *def\\s +\\([^( \t\n]+\\)"
-       1 font-lock-function-name-face)
-     ;; keywords
-     (cons (concat
-            "\\(^\\|[^_:.@$]\\|\\.\\.\\)\\b\\(defined\\?\\|"
-            (regexp-opt
-             '("alias_method"
-               "alias"
-               "and"
-               "begin"
-               "break"
-               "case"
-               "catch"
-               "class"
-               "def"
-               "do"
-               "elsif"
-               "else"
-               "fail"
-               "ensure"
-               "for"
-               "end"
-               "if"
-               "in"
-               "module_function"
-               "module"
-               "next"
-               "not"
-               "or"
-               "public"
-               "private"
-               "protected"
-               "raise"
-               "redo"
-               "rescue"
-               "retry"
-               "return"
-               "then"
-               "throw"
-               "super"
-               "unless"
-               "undef"
-               "until"
-               "when"
-               "while"
-               "yield")
-             t)
-            "\\_>\\)")
-           2)
-     ;; here-doc beginnings
-     (list ruby-here-doc-beg-re 0 'font-lock-string-face)
-     ;; variables
-     '("\\(^\\|[^_:.@$]\\|\\.\\.\\)\\b\\(nil\\|self\\|true\\|false\\)\\>"
-       2 font-lock-variable-name-face)
-     ;; variables
-     '("\\(\\$\\([^a-zA-Z0-9 \n]\\|[0-9]\\)\\)\\W"
-       1 font-lock-variable-name-face)
-     '("\\(\\$\\|@\\|@@\\)\\(\\w\\|_\\)+"
-       0 font-lock-variable-name-face)
-     ;; embedded document
-     '(ruby-font-lock-docs
-       0 font-lock-comment-face t)
-     '(ruby-font-lock-maybe-docs
-       0 font-lock-comment-face t)
-     ;; general delimited string
-     '("\\(^\\|[[ \t\n<+(,=]\\)\\(%[xrqQwW]?\\([^<[{(a-zA-Z0-9 \n]\\)[^\n\\\\]*\\(\\\\.[^\n\\\\]*\\)*\\(\\3\\)\\)"
-       (2 font-lock-string-face))
-     ;; constants
-     '("\\(^\\|[^_]\\)\\b\\([A-Z]+\\(\\w\\|_\\)*\\)"
-       2 font-lock-type-face)
-     ;; symbols
-     '("\\(^\\|[^:]\\)\\(:\\([-+~]@?\\|[/%&|^`]\\|\\*\\*?\\|<\\(<\\|=>?\\)?\\|>[>=]?\\|===?\\|=~\\|\\[\\]=?\\|\\(\\w\\|_\\)+\\([!?=]\\|\\b_*\\)\\|#{[^}\n\\\\]*\\(\\\\.[^}\n\\\\]*\\)*}\\)\\)"
-       2 font-lock-reference-face)
-     ;; expression expansion
-     '("#\\({[^}\n\\\\]*\\(\\\\.[^}\n\\\\]*\\)*}\\|\\(\\$\\|@\\|@@\\)\\(\\w\\|_\\)+\\)"
-       0 font-lock-variable-name-face t)
-     ;; warn lower camel case
-     ;'("\\<[a-z]+[a-z0-9]*[A-Z][A-Za-z0-9]*\\([!?]?\\|\\>\\)"
-     ;  0 font-lock-warning-face)
-     )
-    "*Additional expressions to highlight in ruby mode."))
-
- ;; TODO: remove.
- ((featurep 'hilit19)
-  (hilit-set-mode-patterns
-   'ruby-mode
-   '(("[^$\\?]\\(\"[^\\\"]*\\(\\\\\\(.\\|\n\\)[^\\\"]*\\)*\"\\)" 1 string)
-     ("[^$\\?]\\('[^\\']*\\(\\\\\\(.\\|\n\\)[^\\']*\\)*'\\)" 1 string)
-     ("[^$\\?]\\(`[^\\`]*\\(\\\\\\(.\\|\n\\)[^\\`]*\\)*`\\)" 1 string)
-     ("^\\s *#.*$" nil comment)
-     ("[^$@?\\]\\(#[^$@{\n].*$\\)" 1 comment)
-     ("[^a-zA-Z_]\\(\\?\\(\\\\[CM]-\\)*.\\)" 1 string)
-     ("^\\s *\\(require\\|load\\).*$" nil include)
-     ("^\\s *\\(include\\|alias\\|undef\\).*$" nil decl)
-     ("^\\s *\\<\\(class\\|def\\|module\\)\\>" "[)\n;]" defun)
-     ("[^_]\\<\\(begin\\|case\\|else\\|elsif\\|end\\|ensure\\|for\\|if\\|unless\\|rescue\\|then\\|when\\|while\\|until\\|do\\|yield\\)\\>\\([^_]\\|$\\)" 1 defun)
-     ("[^_]\\<\\(and\\|break\\|next\\|raise\\|fail\\|in\\|not\\|or\\|redo\\|retry\\|return\\|super\\|yield\\|catch\\|throw\\|self\\|nil\\)\\>\\([^_]\\|$\\)" 1 keyword)
-     ("\\$\\(.\\|\\sw+\\)" nil type)
-     ("[$@].[a-zA-Z_0-9]*" nil struct)
-     ("^__END__" nil label))))
- )
+(defconst ruby-font-lock-keywords
+  (list
+   ;; functions
+   '("^\\s *def\\s +\\([^( \t\n]+\\)"
+     1 font-lock-function-name-face)
+   ;; keywords
+   (cons (concat
+          "\\(^\\|[^_:.@$]\\|\\.\\.\\)\\b\\(defined\\?\\|"
+          (regexp-opt
+           '("alias_method"
+             "alias"
+             "and"
+             "begin"
+             "break"
+             "case"
+             "catch"
+             "class"
+             "def"
+             "do"
+             "elsif"
+             "else"
+             "fail"
+             "ensure"
+             "for"
+             "end"
+             "if"
+             "in"
+             "module_function"
+             "module"
+             "next"
+             "not"
+             "or"
+             "public"
+             "private"
+             "protected"
+             "raise"
+             "redo"
+             "rescue"
+             "retry"
+             "return"
+             "then"
+             "throw"
+             "super"
+             "unless"
+             "undef"
+             "until"
+             "when"
+             "while"
+             "yield")
+           t)
+          "\\_>\\)")
+         2)
+   ;; here-doc beginnings
+   (list ruby-here-doc-beg-re 0 'font-lock-string-face)
+   ;; variables
+   '("\\(^\\|[^_:.@$]\\|\\.\\.\\)\\b\\(nil\\|self\\|true\\|false\\)\\>"
+     2 font-lock-variable-name-face)
+   ;; variables
+   '("\\(\\$\\([^a-zA-Z0-9 \n]\\|[0-9]\\)\\)\\W"
+     1 font-lock-variable-name-face)
+   '("\\(\\$\\|@\\|@@\\)\\(\\w\\|_\\)+"
+     0 font-lock-variable-name-face)
+   ;; embedded document
+   '(ruby-font-lock-docs
+     0 font-lock-comment-face t)
+   '(ruby-font-lock-maybe-docs
+     0 font-lock-comment-face t)
+   ;; general delimited string
+   '("\\(^\\|[[ \t\n<+(,=]\\)\\(%[xrqQwW]?\\([^<[{(a-zA-Z0-9 \n]\\)[^\n\\\\]*\\(\\\\.[^\n\\\\]*\\)*\\(\\3\\)\\)"
+     (2 font-lock-string-face))
+   ;; constants
+   '("\\(^\\|[^_]\\)\\b\\([A-Z]+\\(\\w\\|_\\)*\\)"
+     2 font-lock-type-face)
+   ;; symbols
+   '("\\(^\\|[^:]\\)\\(:\\([-+~]@?\\|[/%&|^`]\\|\\*\\*?\\|<\\(<\\|=>?\\)?\\|>[>=]?\\|===?\\|=~\\|\\[\\]=?\\|\\(\\w\\|_\\)+\\([!?=]\\|\\b_*\\)\\|#{[^}\n\\\\]*\\(\\\\.[^}\n\\\\]*\\)*}\\)\\)"
+     2 font-lock-reference-face)
+   ;; expression expansion
+   '("#\\({[^}\n\\\\]*\\(\\\\.[^}\n\\\\]*\\)*}\\|\\(\\$\\|@\\|@@\\)\\(\\w\\|_\\)+\\)"
+     0 font-lock-variable-name-face t)
+   ;; warn lower camel case
+                                        ;'("\\<[a-z]+[a-z0-9]*[A-Z][A-Za-z0-9]*\\([!?]?\\|\\>\\)"
+                                        ;  0 font-lock-warning-face)
+   )
+  "*Additional expressions to highlight in ruby mode.")
 
 
 (provide 'ruby-mode)
