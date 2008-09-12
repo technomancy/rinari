@@ -322,7 +322,7 @@ Also ignores spaces after parenthesis when 'space."
 
 ;;;###autoload
 (defun ruby-mode ()
-  "Major mode for editing ruby scripts.
+  "Major mode for editing Ruby scripts.
 \\[ruby-indent-line] properly indents subexpressions of multi-line
 class, module, def, if, while, for, do, and case statements, taking
 nesting into account.
@@ -370,30 +370,33 @@ The variable ruby-indent-level controls the amount of indentation.
   (interactive)
   (ruby-indent-to (ruby-calculate-indent)))
 
-(defun ruby-indent-to (x)
-  "TODO: document."
-  (if x
-      (let (shift top beg)
-        (and (< x 0) (error "invalid nest"))
-        (setq shift (current-column))
+(defun ruby-indent-to (column)
+  "Indent the current line to COLUMN."
+  (when column
+    (let (shift top beg)
+      (and (< column 0) (error "invalid nest"))
+      (setq shift (current-column))
+      (beginning-of-line)
+      (setq beg (point))
+      (back-to-indentation)
+      (setq top (current-column))
+      (skip-chars-backward " \t")
+      (if (>= shift top) (setq shift (- shift top))
+        (setq shift 0))
+      (if (and (bolp)
+               (= column top))
+          (move-to-column (+ column shift))
+        (move-to-column top)
+        (delete-region beg (point))
         (beginning-of-line)
-        (setq beg (point))
-        (back-to-indentation)
-        (setq top (current-column))
-        (skip-chars-backward " \t")
-        (if (>= shift top) (setq shift (- shift top))
-          (setq shift 0))
-        (if (and (bolp)
-                 (= x top))
-            (move-to-column (+ x shift))
-          (move-to-column top)
-          (delete-region beg (point))
-          (beginning-of-line)
-          (indent-to x)
-          (move-to-column (+ x shift))))))
+        (indent-to column)
+        (move-to-column (+ column shift))))))
 
 (defun ruby-special-char-p (&optional pnt)
-  "TODO: document."
+  "Return t if the character before PNT (default `point') is a special character.
+
+Special characters are `?', `$', `:' when preceded by whitespace,
+and `\\' when preceded by `?'."
   (setq pnt (or pnt (point)))
   (let ((c (char-before pnt)) (b (and (< (point-min) pnt) (char-before (1- pnt)))))
     (cond ((or (eq c ??) (eq c ?$)))
