@@ -279,6 +279,7 @@ Also ignores spaces after parenthesis when 'space."
   (set (make-variable-buffer-local 'comment-column) ruby-comment-column)
   (set (make-variable-buffer-local 'comment-start-skip) "#+ *")
   (set (make-local-variable 'parse-sexp-ignore-comments) t)
+  (set (make-local-variable 'parse-sexp-lookup-properties) t)
   (set (make-local-variable 'paragraph-start) (concat "$\\|" page-delimiter))
   (set (make-local-variable 'paragraph-separate) paragraph-start)
   (set (make-local-variable 'paragraph-ignore-fill-prefix) t))
