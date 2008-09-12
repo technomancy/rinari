@@ -64,7 +64,7 @@
   (regexp-opt ruby-block-mid-keywords)
   "Regexp to match where the indentation gets shallower in middle of block statements.")
 
-(defconst ruby-block-ops
+(defconst ruby-block-op-keywords
   '("and" "or" "not")
   "Regexp to match boolean keywords.")
 
