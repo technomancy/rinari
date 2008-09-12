@@ -142,9 +142,6 @@
     map)
   "Keymap used in ruby-mode.")
 
-(defvar ruby-mode-syntax-table nil
-  "Syntax table in use in ruby-mode buffers.")
-
 (defvar ruby-mode-syntax-table
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?\' "\"" table)
