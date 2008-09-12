@@ -75,13 +75,21 @@
 (defconst ruby-block-end-re "\\<end\\>")
 
 (defconst ruby-here-doc-beg-re
-  "\\(<\\)<\\(-\\)?\\(\\([a-zA-Z0-9_]+\\)\\|[\"]\\([^\"]+\\)[\"]\\|[']\\([^']+\\)[']\\)")
+  "\\(<\\)<\\(-\\)?\\(\\([a-zA-Z0-9_]+\\)\\|[\"]\\([^\"]+\\)[\"]\\|[']\\([^']+\\)[']\\)"
+  "Regexp to match the beginning of a heredoc.")
 
 (defconst ruby-here-doc-end-re
-  "^\\([ \t]+\\)?\\(.*\\)\\(.\\)$")
+  "^\\([ \t]+\\)?\\(.*\\)\\(.\\)$"
+  "Regexp to match the end of heredocs.
+
+This will actually match any line with one or more characters.
+It's useful in that it divides up the match string so that
+`ruby-here-doc-beg-match' can search for the beginning of the heredoc.")
 
 (defun ruby-here-doc-end-match ()
-  "Return a regexp to find the end of the last matched heredoc."
+  "Return a regexp to find the end of a heredoc.
+
+This should only be called after matching against `ruby-here-doc-beg-re'."
   (concat "^"
           (if (match-string 2) "[ \t]*" nil)
           (regexp-quote
@@ -90,7 +98,9 @@
                (match-string 6)))))
 
 (defun ruby-here-doc-beg-match ()
-  "TODO: document." ;; Nathan?
+  "Return a regexp to find the beginning of a heredoc.
+
+This should only be called after matching against `ruby-here-doc-end-re'."
   (let ((contents (regexp-quote (concat (match-string 2) (match-string 3)))))
     (concat "<<"
             (let ((match (match-string 1)))
@@ -1162,16 +1172,21 @@ balanced expression is found."
           (,ruby-here-doc-end-re 3 (ruby-here-doc-end-syntax))))
 
   (defun ruby-in-non-here-doc-string-p ()
-    "TODO: document."
+    "Returns whether or not the point is in a comment or
+a string that's not a heredoc.
+
+This function assumes that all strings with generic delimiters
+are heredocs. In ruby-mode, regexps also use generic delimiters,
+so text in them will count as text in heredocs for the purpose
+of this function. See `parse-partial-sexp'."
+    ;; TODO: We may be able to make this more accurate
+    ;; by looking at the character at (nth 3 syntax)
     (let ((syntax (syntax-ppss)))
       (or (nth 4 syntax)
-          ;; In a string *without* a generic delimiter
-          ;; If it's generic, it's a heredoc and we don't care
-          ;; See `parse-partial-sexp'
           (numberp (nth 3 syntax)))))
 
   (defun ruby-in-here-doc-p ()
-    "TODO: document."
+    "Returns whether or not the point is in a heredoc."
     (save-excursion
       (let ((old-point (point)) (case-fold-search nil))
         (beginning-of-line)
@@ -1210,7 +1225,12 @@ buffer position `limit' or the end of the buffer."
           (point)))))
 
   (defun ruby-here-doc-beg-syntax ()
-    "TODO: document."
+    "Returns the syntax cell for a line that may begin a heredoc.
+See the definition of `ruby-font-lock-syntactic-keywords'.
+
+This sets the syntax cell for the newline ending the line
+containing the heredoc beginning so that cases where multiple
+heredocs are started on one line are handled correctly."
     (save-excursion
       (goto-char (match-beginning 0))
       (unless (or (ruby-in-non-here-doc-string-p)
@@ -1218,8 +1238,13 @@ buffer position `limit' or the end of the buffer."
         (string-to-syntax "|"))))
 
   (defun ruby-here-doc-end-syntax ()
-    "TODO: document."
+    "Returns the syntax cell for a line that may end a heredoc.
+See the definition of `ruby-font-lock-syntactic-keywords'."
     (let ((pss (syntax-ppss)) (case-fold-search nil))
+      ;; If we aren't in a string, we definitely aren't ending a heredoc,
+      ;; so we can just give up.
+      ;; This means we aren't doing a full-document search
+      ;; every time we enter a character.
       (when (eq (syntax-ppss-context pss) 'string)
         (save-excursion
           (goto-char (nth 8 pss))
