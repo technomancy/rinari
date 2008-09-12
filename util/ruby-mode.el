@@ -184,24 +184,24 @@ This should only be called after matching against `ruby-here-doc-end-re'."
   "Syntax table to use in ruby-mode.")
 
 (defcustom ruby-indent-tabs-mode nil
-  "*Indentation can insert tabs in ruby mode if this is non-nil."
+  "Indentation can insert tabs in ruby mode if this is non-nil."
   :type 'boolean :group 'ruby)
 
 (defcustom ruby-indent-level 2
-  "*Indentation of ruby statements."
+  "Indentation of ruby statements."
   :type 'integer :group 'ruby)
 
 (defcustom ruby-comment-column 32
-  "*Indentation column of comments."
+  "Indentation column of comments."
   :type 'integer :group 'ruby)
 
 (defcustom ruby-deep-arglist t
-  "*Deep indent lists in parenthesis when non-nil.
+  "Deep indent lists in parenthesis when non-nil.
 Also ignores spaces after parenthesis when 'space."
   :group 'ruby)
 
 (defcustom ruby-deep-indent-paren '(?\( ?\[ ?\] t)
-  "*Deep indent lists in parenthesis when non-nil. t means continuous line.
+  "Deep indent lists in parenthesis when non-nil. t means continuous line.
 Also ignores spaces after parenthesis when 'space."
   :group 'ruby)
 
@@ -214,7 +214,7 @@ Also ignores spaces after parenthesis when 'space."
   :group 'ruby)
 
 (defcustom ruby-use-encoding-map t
-  "*Use `ruby-encoding-map' to set encoding magic comment if this is non-nil."
+  "Use `ruby-encoding-map' to set encoding magic comment if this is non-nil."
   :type 'boolean :group 'ruby)
 
 (eval-when-compile (require 'cl))
@@ -1379,7 +1379,7 @@ See `font-lock-syntax-table'.")
                                         ;'("\\<[a-z]+[a-z0-9]*[A-Z][A-Za-z0-9]*\\([!?]?\\|\\>\\)"
                                         ;  0 font-lock-warning-face)
    )
-  "*Additional expressions to highlight in ruby mode.")
+  "Additional expressions to highlight in ruby mode.")
 
 
 (provide 'ruby-mode)
