@@ -830,7 +830,7 @@ The variable ruby-indent-level controls the amount of indentation.
                                       (not (looking-at "do\\>[^_]")))))
                               (t t))))
                        (not (eq ?, c))
-n                       (setq op-end t)))))
+                       (setq op-end t)))))
            (setq indent
                  (cond
                   ((and
