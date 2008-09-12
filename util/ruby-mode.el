@@ -688,11 +688,12 @@ The variable ruby-indent-level controls the amount of indentation.
           )))
 
 (defun ruby-indent-size (pos nest)
-    "TODO: document."
+  "Returns the indentation level in spaces NEST levels deeper than POS."
   (+ pos (* (or nest 1) ruby-indent-level)))
 
 (defun ruby-calculate-indent (&optional parse-start)
-    "TODO: document throughout function body."
+  "Returns the proper indentation level of the current line."
+  ;; TODO: Document body
   (save-excursion
     (beginning-of-line)
     (let ((indent-point (point))
@@ -853,16 +854,15 @@ The variable ruby-indent-level controls the amount of indentation.
         indent))))
 
 (defun ruby-electric-brace (arg)
-  "TODO: document."
+  "Inserts a brace and re-indents the current line."
   (interactive "P")
-  (insert-char last-command-char 1)
-  (ruby-indent-line t)
-  (delete-char -1)
-  (self-insert-command (prefix-numeric-value arg)))
+  (self-insert-command (prefix-numeric-value arg))
+  (ruby-indent-line t))
 
 (eval-when-compile
   (defmacro defun-region-command (func args &rest body)
     "TODO: document."
+    ;; If we drop xemacs support, we can replace this macro with a simple defun
     (let ((intr (car body)))
       (when (featurep 'xemacs)
         (if (stringp intr) (setq intr (cadr body)))
@@ -871,33 +871,42 @@ The variable ruby-indent-level controls the amount of indentation.
              (setcar intr (concat "_" (car intr)))))
       (cons 'defun (cons func (cons args body))))))
 
+
+;; TODO: Why isn't one ruby-*-of-defun written in terms of the other?
 (defun-region-command ruby-beginning-of-defun (&optional arg)
-  "Move backward to next beginning-of-defun.
-With argument, do this that many times.
-Returns t unless search stops due to end of buffer."
+  "Move backward to the beginning of the current top-level defun.
+With ARG, move backward multiple defuns. Negative ARG means
+move forward."
   (interactive "p")
   (and (re-search-backward (concat "^\\(" ruby-block-beg-re "\\)\\b")
                            nil 'move (or arg 1))
-       (progn (beginning-of-line) t)))
-
-(defun ruby-beginning-of-indent ()
-  (and (re-search-backward (concat "^\\(" ruby-indent-beg-re "\\)\\b")
-                           nil 'move)
-       (progn
-         (beginning-of-line)
-         t)))
+       (beginning-of-line)))
 
 (defun-region-command ruby-end-of-defun (&optional arg)
-  "Move forward to next end of defun.
-An end of a defun is found by moving forward from the beginning of one."
+  "Move forward to the end of the current top-level defun.
+With ARG, move forward multiple defuns. Negative ARG means
+move backward."
   (interactive "p")
   (and (re-search-forward (concat "^\\(" ruby-block-end-re "\\)\\($\\|\\b[^_]\\)")
                           nil 'move (or arg 1))
-       (progn (beginning-of-line) t))
+       (beginning-of-line))
   (forward-line 1))
 
+(defun ruby-beginning-of-indent ()
+  "TODO: document"
+  ;; I don't understand this function.
+  ;; It seems like it should move to the line where indentation should deepen,
+  ;; but ruby-indent-beg-re only accounts for whitespace before class, module and def,
+  ;; so this will only match other block beginners at the beginning of the line.
+  (and (re-search-backward (concat "^\\(" ruby-indent-beg-re "\\)\\b") nil 'move)
+       (beginning-of-line)))
+
 (defun ruby-move-to-block (n)
-  "TODO: document."
+  "Moves to the beginning (N < 0) or the end (N > 0) of the current block
+or blocks containing the current block."
+  ;; TODO: Make this work for n > 1,
+  ;; make it not loop for n = 0,
+  ;; document body
   (let (start pos done down)
     (setq start (ruby-calculate-indent))
     (setq down (looking-at (if (< n 0) ruby-block-end-re
@@ -928,21 +937,26 @@ An end of a defun is found by moving forward from the beginning of one."
   (back-to-indentation))
 
 (defun-region-command ruby-beginning-of-block (&optional arg)
-  "Move backward to next beginning-of-block"
+  "Move backward to the beginning of the current block.
+With ARG, move up multiple blocks."
   (interactive "p")
   (ruby-move-to-block (- (or arg 1))))
 
 (defun-region-command ruby-end-of-block (&optional arg)
-  "Move forward to next beginning-of-block"
-  (interactive "p")
+  "Move forward to the end of the current block.
+With ARG, move out of multiple blocks."
+  ;; Passing a value > 1 to ruby-move-to-block currently doesn't work.
+  (interactive)
   (ruby-move-to-block (or arg 1)))
 
-(defun-region-command ruby-forward-sexp (&optional cnt)
-  "TODO: document."
+(defun-region-command ruby-forward-sexp (&optional arg)
+  "Move forward across one balanced expression (sexp).
+With ARG, do it many times. Negative ARG means move backward."
+  ;; TODO: Document body
   (interactive "p")
-  (if (and (numberp cnt) (< cnt 0))
-      (ruby-backward-sexp (- cnt))
-    (let ((i (or cnt 1)))
+  (if (and (numberp arg) (< arg 0))
+      (ruby-backward-sexp (- arg))
+    (let ((i (or arg 1)))
       (condition-case nil
           (while (> i 0)
             (skip-syntax-forward " ")
@@ -977,12 +991,14 @@ An end of a defun is found by moving forward from the beginning of one."
         ((error) (forward-word 1)))
       i)))
 
-(defun-region-command ruby-backward-sexp (&optional cnt)
-  "TODO: document."
+(defun-region-command ruby-backward-sexp (&optional arg)
+  "Move backward across one balanced expression (sexp).
+With ARG, do it many times. Negative ARG means move forward."
+  ;; TODO: Document body
   (interactive "p")
-  (if (and (numberp cnt) (< cnt 0))
-      (ruby-forward-sexp (- cnt))
-    (let ((i (or cnt 1)))
+  (if (and (numberp arg) (< arg 0))
+      (ruby-forward-sexp (- arg))
+    (let ((i (or arg 1)))
       (condition-case nil
           (while (> i 0)
             (skip-chars-backward " \t\n,.:;|&^~=!?\\+\\-\\*")
@@ -1038,9 +1054,9 @@ An end of a defun is found by moving forward from the beginning of one."
   (re-search-backward "^\n" (- (point) 1) t))
 
 (defun ruby-indent-exp (&optional shutup-p)
-  "Indent each line in the balanced expression following point syntactically.
-If optional SHUTUP-P is non-nil, no errors are signalled if no
-balanced expression is found."
+  "Indent each line in the balanced expression following the point.
+If a prefix arg is given or SHUTUP-P is non-nil, no errors
+are signalled if a balanced expression isn't found."
   (interactive "*P")
   (let ((here (point-marker)) start top column (nest t))
     (set-marker-insertion-type here t)
@@ -1061,7 +1077,19 @@ balanced expression is found."
       (set-marker here nil))))
 
 (defun ruby-add-log-current-method ()
-  "Return current method string."
+  "Returns the current method name as a string.
+This string includes all namespaces.
+
+For example:
+
+  #exit
+  String#gsub
+  Net::HTTP#active?
+  File::open.
+
+See `add-log-current-defun-function'."
+  ;; TODO: Document body
+  ;; Why does this append a period to class methods?
   (condition-case nil
       (save-excursion
         (let (mname mlist (indent 0))
