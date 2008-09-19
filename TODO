@@ -54,9 +54,16 @@ and another
 :SNIP:
     /var/lib/gems/1.8/gems/mongrel-1.1.3/bin/mongrel_rails:281
 :END:
-* TODO windows support
+* PARTIAL windows support
+jumping between views, and launching servers and consoles etc... all
+seem to work, the only hurdle now is a rinari-rake issue
 
-ugh
+  rinari-rake however fails with: apply: Spawning child process:
+  invalid argument. Haven't had the chance to look into and debug this
+  further.  I'm currently using cygwin as my shell within emacs so not
+  sure if this causing some issues.
+
+
 
 * PARTIAL rinari movement [4/5]
 
