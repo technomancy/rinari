@@ -229,7 +229,11 @@ don't include an '='."
 	      (partial-name
 	       (replace-regexp-in-string "[[:space:]]+" "_" partial-name)))
 	  (kill-region begin end)
-	  (find-file (concat "_" partial-name ending))
+	  (if (string-match "\\(.+\\)/\\(.+\\)" partial-name)
+	      (let ((default-directory (expand-file-name (match-string 1 partial-name)
+							 (expand-file-name ".."))))
+		(find-file (concat "_" (match-string 2 partial-name) ending)))
+	    (find-file (concat "_" partial-name ending)))
 	  (yank) (pop-to-buffer nil)
 	  (insert (concat "<%= render :partial => '" partial-name "' %>\n")))
       (message "not in a view"))))
