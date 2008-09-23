@@ -40,8 +40,19 @@
 ;; directory, assumed here to be ~/.emacs.d. Add these lines of code
 ;; to your .emacs file:
 
+;; ;; ido
+;; (require 'ido)
+;; (ido-mode t)
+;; ;; rinari
 ;; (add-to-list 'load-path "~/.emacs.d/rinari")
 ;; (require 'rinari)
+
+;; Note: if you cloned this from a git repo, you probably have to grab
+;; the submodules which can be done simply with the following commands
+;; from the root of the rinari directory
+
+;;  git submodule init
+;;  git submodule update
 
 ;; See TODO file in this directory.
 
@@ -379,7 +390,7 @@ renders and redirects to find the final controller or view."
      ("test/unit/\\1_test.rb#test_\\2"         . "app/views/\\1/_?\\2.*")
      ("test/fixtures/\\1.yml"                  . "app/views/\\1/.*")
      (t                                        . "app/views/.*"))
-    nil)
+    t)
    (test
     "t"
     (("app/models/\\1.rb#\\2"                  . "test/unit/\\1_test.rb#test_\\2")
@@ -390,7 +401,7 @@ renders and redirects to find the final controller or view."
      ("test/functional/\\1_controller_test.rb" . "test/unit/\\1_test.rb")
      ("test/unit/\\1_test.rb"                  . "test/functional/\\1_controller_test.rb")
      (t                                        . "test/.*"))
-    nil)
+    t)
    (rspec
     "r"
     (("app/\\1\\.rb"                           . "spec/\\1_spec.rb")
@@ -398,7 +409,7 @@ renders and redirects to find the final controller or view."
      ("spec/views/\\1_spec.rb"                 . "app/views/\\1")
      ("spec/\\1_spec.rb"                       . "app/\\1.rb")
      (t                                        . "spec/.*"))
-    nil)
+    t)
    (fixture
     "x"
     (("app/models/\\1.rb"                      . "test/fixtures/\\1.yml")
@@ -412,7 +423,7 @@ renders and redirects to find the final controller or view."
      ("test/functional/\\1_controller_test.rb" . "test/fixtures/\\1.yml")
      ("test/unit/\\1_test.rb"                  . "test/fixtures/\\1.yml")
      (t                                        . "test/fixtures/"))
-    nil)
+    t)
    (rspec-fixture
     "z"
     (("app/models/\\1.rb"                      . "spec/fixtures/\\1.yml")
@@ -426,7 +437,7 @@ renders and redirects to find the final controller or view."
      ("test/functional/\\1_controller_test.rb" . "spec/fixtures/\\1.yml")
      ("test/unit/\\1_test.rb"                  . "spec/fixtures/\\1.yml")
      (t                                        . "spec/fixtures/"))
-    nil)
+    t)
    (helper
     "h"
     (("app/models/\\1.rb"                      . "app/helpers/\\1_helper.rb")
@@ -441,7 +452,7 @@ renders and redirects to find the final controller or view."
      ("test/unit/\\1_test.rb#test_\\2"         . "app/helpers/\\1_helper.rb#\\2")
      ("test/unit/\\1_test.rb"                  . "app/helpers/\\1_helper.rb")
      (t                                        . "app/helpers/"))
-    nil)
+    t)
    (migration
     "i"
     (("app/controllers/\\1_controller.rb"      . "db/migrate/.*create_\\1.rb")
