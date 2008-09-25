@@ -1,24 +1,15 @@
 # -*- mode: org -*-
 # 
 #+TITLE:     TODO
-#+SEQ_TODO:  TODO PARTIAL MAYBE WAITING | DONE CANCELLED
+#+SEQ_TODO:  TODO WAITING | DONE CANCELLED MAYBE PARTIAL
 #+DRAWERS:   SNIP
+#+CATEGORY:  rinari
 
 List of pending/completed tasks for rinari
 
 for background see http://groups.google.com/group/emacs-on-rails
 
-* TODO bundles
-** DONE rhtml (from original rinari)
-see
-- [[http://rinari.rubyforge.org/rhtml_002dMode.html#rhtml_002dMode]]
-- [[http://github.com/eschulte/rhtml/tree/master]]
-
-** rdebug
-- [[http://bashdb.sourceforge.net/ruby-debug.html#SEC_Top]]
-** DONE snippets
-see http://github.com/eschulte/yasnippets-rails/tree/master
-* PARTIAL full test coverage [0/1]
+* TODO full test coverage (ERT) [0/1]
 - [X] movement tests
 - [-] compilation tests
   - [X] console
@@ -28,6 +19,76 @@ see http://github.com/eschulte/yasnippets-rails/tree/master
   - [ ] script
 
 switch from using elunit.el to ert.el for testing
+
+* TODO create a screencast
+promotion!!
+
+- [[http://www.emacswiki.org/cgi-bin/wiki/EmacsScreencasts]]
+* TODO windows support
+  :PROPERTIES:
+  :tested-by: Darren Syzling
+  :END:
+jumping between views, and launching servers and consoles etc... all
+seem to work, the only hurdle now is a rinari-rake issue
+
+  rinari-rake however fails with: apply: Spawning child process:
+  invalid argument. Haven't had the chance to look into and debug this
+  further.  I'm currently using cygwin as my shell within emacs so not
+  sure if this causing some issues.
+
+#+BEGIN_EXAMPLE
+Backtrace for rinari-rake error (Spawning child process:exec format error) is:
+
+  start-process("rake" #<buffer *rake*> "rake" "package")
+  apply(start-process "rake" #<buffer *rake*> "rake" "package")
+  comint-exec-1("rake" #<buffer *rake*> "rake" ("package"))
+  comint-exec(#<buffer *rake*> "rake" "rake" nil ("package"))
+  make-comint-in-buffer("rake" nil "rake" nil "package")
+  apply(make-comint-in-buffer "rake" nil "rake" nil "package")
+  make-comint("rake" "rake" nil "package")
+  apply(make-comint "rake" "rake" nil "package")
+  (let* ((buffer ...) (proc ...)) (save-excursion (set-buffer buffer)
+(set-process-sentinel proc ...) (set-process-filter proc ...) (set ...
+ruby-compilation-error-regexp-alist) (set ... ...)
+(compilation-minor-mode t) (ruby-compilation-minor-mode t)))
+  (if (comint-check-proc comp-buffer-name) nil (let* (... ...)
+(save-excursion ... ... ... ... ... ... ...)))
+  (unless (comint-check-proc comp-buffer-name) (let* (... ...)
+(save-excursion ... ... ... ... ... ... ...)))
+  (let ((comp-buffer-name ...)) (unless (comint-check-proc
+comp-buffer-name) (let* ... ...)) comp-buffer-name)
+  ruby-do-run-w/compilation("rake" ("rake" "package"))
+  (pop-to-buffer (ruby-do-run-w/compilation "rake" (cons "rake" ...)))
+  (let* ((task ...) (rake-args ...)) (pop-to-buffer
+(ruby-do-run-w/compilation "rake" ...)))
+  ad-Orig-ruby-rake-w/compilation(nil nil)
+  (setq ad-return-value (ad-Orig-ruby-rake-w/compilation edit task))
+  (let ((default-directory ...)) (setq ad-return-value
+(ad-Orig-ruby-rake-w/compilation edit task)) (rinari-launch))
+  (let (ad-return-value) (let (...) (setq ad-return-value ...)
+(rinari-launch)) ad-return-value)
+  ruby-rake-w/compilation(nil nil)
+  rinari-rake(nil)
+  call-interactively(rinari-rake)
+#+END_EXAMPLE
+
+* TODO upodate documentation for instillation
+  :PROPERTIES:
+  :suggested-by: Antti
+  :END:
+need to add =git submodule init; git submodule update= to clone the
+submodules as well
+
+* PARTIAL bundles
+** DONE rhtml (from original rinari)
+see
+- [[http://rinari.rubyforge.org/rhtml_002dMode.html#rhtml_002dMode]]
+- [[http://github.com/eschulte/rhtml/tree/master]]
+
+** rdebug
+- [[http://bashdb.sourceforge.net/ruby-debug.html#SEC_Top]]
+** DONE snippets
+see http://github.com/eschulte/yasnippets-rails/tree/master
 
 * MAYBE inf-ruby enhancement
 
@@ -53,11 +114,8 @@ and another
 :SNIP:
     /var/lib/gems/1.8/gems/mongrel-1.1.3/bin/mongrel_rails:281
 :END:
-* TODO windows support
 
-ugh
-
-* PARTIAL rinari movement [4/5]
+* DONE rinari movement [5/5]
 
 From anywhere, get to the related model/controller/test/view
 
@@ -74,7 +132,7 @@ pending...
 - [X] look at a better keybinding setup
 - [X] rails2 style view names
 - [X] code refactor:
-- [ ] regexps in method names
+- [X] regexps in method names
 
 ** code refactor
 
@@ -86,8 +144,6 @@ like toggle, but instead of elements like
 Done see http://github.com/eschulte/jump.el/tree/master
 
 * DONE add yaml,css,javascript,ruby pointers to the documentation
-* CANCELLED adjust eshell/shell environment to highlight ruby errors
-not sure this is possible, at least not easily
 
 * DONE write up some info documentation for Rinari
 
@@ -344,5 +400,7 @@ easy enough
 
 
  LocalWords:  elsif elseif keybinding
+* CANCELLED adjust eshell/shell environment to highlight ruby errors
+not sure this is possible, at least not easily
 
 

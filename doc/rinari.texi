@@ -54,13 +54,13 @@ Forrest Chang, Ryan Davis, Paul Stickne, and others
 @b{Contents}
 
 @menu
-* Introduction::                Brief summary of what Rinari is (and isn't)
-* Install::                     Installing Rinari in your Emacs
-* Navigation::                  Jumping between files in your Rails project
-* Test Driven Development::     Support for Test Driven Development
-* Execution::                   Running tests, consoles, and web-servers
-* Miscellaneous::               Leftover functions
-* Add Ons::                     Additional Emacs tools that work well with Rinari and Rails
+* Introduction::                      Brief summary of what Rinari is (and isn't)
+* Install::                           Installing Rinari in your Emacs
+* Navigation::                        Jumping between files in your Rails project
+* Test/Behavior Driven Development::  Support for Test Driven Development
+* Execution::                         Running tests, consoles, and web-servers
+* Miscellaneous::                     Leftover functions
+* Add Ons::                           Additional Emacs tools that work well with Rinari and Rails
 @end menu
 
 @b{Links}
@@ -92,7 +92,7 @@ use when working on a Rails applications including...
 
 @itemize
 @item @emph{Navigation} between files in your Rails project (@pxref{Navigation})
-@item Facilitation of @emph{Test Driven Development} (@pxref{Test Driven Development})
+@item Facilitation of @emph{Test/Behavior Driven Development} (@pxref{Test/Behavior Driven Development})
 @item @emph{Execution} of tests, consoles, and web-servers (@pxref{Execution})
 @end itemize
 
@@ -102,18 +102,11 @@ to as ``rhtml'' files), while all of the Rinari functions will be
 available from within your rhtml files you are free to chose from the
 many stand-alone options for editing rhtml files (@pxref{Rhtml Setup}).
 
-Following the lead of Dmitry Galinsky's suggestion for emacs-rails
-additional pieces of functionality like snippets, or tools like rdebug
-may be made available as Add Ons (@pxref{Add Ons}), which would be
-individually loaded.
-
-See
-@itemize
-@item @uref{http://github.com/eschulte/rinari/tree/master} for the
-latest versions
-@item @uref{http://groups.google.com/group/emacs-on-rails} for
-discussion of Emacs and Rails developments
-@end itemize
+Rinari development is fueled largely by the discussion on the mailing
+list at @uref{http://groups.google.com/group/emacs-on-rails}.  If you
+have any questions, comments, or suggestions for improving Rinari please
+take them to the list.  The latest version of Rinari will always be
+available at @uref{http://github.com/eschulte/rinari/tree/master}.
 
 @node Install, Basic Setup, Introduction, Top
 @chapter Install
@@ -149,10 +142,8 @@ missing anything vital.
 * Optional Setup::       Some additional setup options
 @end menu
 
-The remainder of this document describes the functions, and environments
-of Rinari, if you would rather just get started, then restart emacs, cd
-into a Rails application in shell or eshell, or open up a file in a
-Rails application.  To see all of the functions provided by rinari try
+The remainder of this document describes the functions and usage of
+Rinari in detail.  To see all of the functions provided by rinari try
 @code{C-hb} then search for rinari, or @code{M-x rinari-<tab>}.
 
 @node Basic Setup, Rhtml Setup, Install, Install
@@ -162,10 +153,15 @@ Rails application.  To see all of the functions provided by rinari try
 The latest Rinari can be obtained from
 @uref{http://github.com/eschulte/rinari/tree/master}.  Select the
 ``download'' button to grab an archive of the source code, or checkout a
-copy using git with the command.
+copy using git (@b{Note}: when cloning Rinari using git it is necessary
+to explicitly update the submodules included with Rinari) by executing
+the following.
 
 @example
 git clone git://github.com/eschulte/rinari.git
+cd rinari
+git submodule init
+git submodule update
 @end example
 
 Place the base rinari directory into your Emacs lisp directory. To
@@ -173,6 +169,11 @@ automatically load Rinari every time you open Emacs add these lines of
 code to your .emacs file:
 
 @lisp
+  ;; Interactively Do Things (highly recommended, but not strictly required)
+  (require 'ido)
+  (ido-mode t)
+
+  ;; Rinari
   (add-to-list 'load-path "~/path/to/your/elisp/rinari")
   (require 'rinari)
 @end lisp
@@ -293,9 +294,10 @@ rake doc:make_html
 While ido-mode
 @uref{http://www.emacswiki.org/cgi-bin/wiki/InteractivelyDoThings} is
 not strictly required it is very helpful in combination with many of
-Rinari functions.  For more information about enabling ido-mode see the
-link below, or to just go ahead and try it out add the following to your
-emacs init file.
+Rinari functions.  Also, the Rinari functions were developed using
+ido-mode and may not work well in it's absence.  For more information
+about enabling ido-mode see the link below, or to just go ahead and try
+it out add the following to your emacs init file.
 
 @lisp
 ;; Interactively Do Things
@@ -314,7 +316,7 @@ tags file relative to the root of your rails applications.
 (setq rinari-tags-file-name "TAGS")
 @end lisp
 
-@node Navigation, Test Driven Development, Optional Setup, Top
+@node Navigation, Test/Behavior Driven Development, Optional Setup, Top
 @chapter Navigation
 @cindex navigation
 
@@ -329,11 +331,32 @@ will take you to the @emph{test_bar} method in
 @emph{test/functional/foo_controller_test.rb}, or calling
 @code{rinari-find-view} will open @emph{app/views/foos/bar.rhtml}.
 
-All told there are 17 different rinari-find-* functions, which are all
-bound to similar hopefully intuitive keybindings allowing you to go
-anywhere from anywhere.  To see the full range of rinari-find functions
-along with their bindings enter a rails project, activate rinari and
-call describe-bindings @code{\H-b}.
+All told there are currently 17 different rinari-find-* functions, which
+are all bound to similar hopefully intuitive keybindings allowing you to
+go anywhere from anywhere.  To see the full range of rinari-find
+functions along with their bindings enter a rails project, activate
+rinari and call describe-bindings @code{\H-b}.  The current list is also
+shown below.
+
+@example
+C-c ; f c	rinari-find-controller
+C-c ; f e	rinari-find-environment
+C-c ; f f	rinari-find-file-in-project
+C-c ; f h	rinari-find-helper
+C-c ; f i	rinari-find-migration
+C-c ; f j	rinari-find-javascript
+C-c ; f l	rinari-find-plugin
+C-c ; f m	rinari-find-model
+C-c ; f n	rinari-find-configuration
+C-c ; f o	rinari-find-log
+C-c ; f p	rinari-find-public
+C-c ; f s	rinari-find-script
+C-c ; f t	rinari-find-test
+C-c ; f v	rinari-find-view
+C-c ; f w	rinari-find-worker
+C-c ; f x	rinari-find-fixture
+C-c ; f y	rinari-find-stylesheet
+@end example
 
 @b{TAGS (jumping to method definitions)}
 
@@ -360,13 +383,13 @@ following from the root of your rails project.
 ctags-exuberant -a -e -f TAGS --tag-relative -R app lib vendor
 @end example
 
-@node Test Driven Development, Execution, Navigation, Top
-@chapter Test Driven Development
-@cindex test driven development
+@node Test/Behavior Driven Development, Execution, Navigation, Top
+@chapter Test/Behavior Driven Development
+@cindex test/behavior driven development
 
 Rinari facilitates a development style reliant upon unit and functional
 tests by providing a single command @code{rinari-test} which executes
-the unit or functional test related to the current method or buffer.
+the unit or functional test related to the current buffer and method.
 The results of the test are dumped into an emacs Compilation buffer
 which allows jumping between error messages and the related source code.
 
@@ -377,7 +400,7 @@ output to a compilation buffer allowing jumping between errors
 and source code.
 @end defun
 
-@node Execution, Miscellaneous, Test Driven Development, Top
+@node Execution, Miscellaneous, Test/Behavior Driven Development, Top
 @chapter Execution
 @cindex execution
 
@@ -421,11 +444,6 @@ to a compilation buffer allowing jumping between errors and source code.
 
 Miscellaneous functions...
 
-@defun rinari-browse-url
-Browse the url related to the current view, controller, test, or model
-with `rinari-browse-url-func' which defaults to `browse-url'.
-@end defun
-
 @defun rinari-rgrep
 Search through the rails project using `rgrep' for a string or `regexp'.
 With optional prefix argument just run `rgrep'.
@@ -448,7 +466,7 @@ extra goodies might not be useful.
 
 This page should serve as marshaling point for links to some other
 tools/packages that work well with Rinari and Rails in general.  If you
-have any ideas for additions to this list, or for new Rinari features in
+have any ideas for additions to this list, or for new Rinari features
 please let us know at
 @uref{http://groups.google.com/group/emacs-on-rails}.
 

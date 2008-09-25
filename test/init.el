@@ -1,5 +1,7 @@
 (cd (file-name-directory (or load-file-name buffer-file-name)))
 (add-to-list 'load-path "../")
+(add-to-list 'load-path "../util/")
+(add-to-list 'load-path "../util/jump/")
 (add-to-list 'load-path "./")
 (require 'rinari)
 (require 'elunit)
