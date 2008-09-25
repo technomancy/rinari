@@ -1,4 +1,8 @@
-(load "erc/erc")
+(add-to-list 'load-path (file-name-directory (or (buffer-file-name)
+                                                 load-file-name)))
+
+(load "ert/ert")
+(load "ert/ert-functional")
 (load "../ruby-mode")
 
 (defmacro with-ruby-buffer (contents &rest body)
