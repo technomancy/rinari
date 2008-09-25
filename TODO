@@ -79,6 +79,10 @@ comp-buffer-name) (let* ... ...)) comp-buffer-name)
 need to add =git submodule init; git submodule update= to clone the
 submodules as well
 
+* TODO updates to finders
+when finding a view from a controller if there is no method name, then
+select from that controller's directory.
+
 * PARTIAL bundles
 ** DONE rhtml (from original rinari)
 see
