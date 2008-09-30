@@ -34,12 +34,16 @@
 ;;; TODO:
 
 ;; Clean up function names so they use a common prefix.
+;; "p" doesn't work at the end of the compilation buffer
 
 ;;; Code:
+
 (require 'ansi-color)
 (require 'pcmpl-rake)
 (require 'compile)
+(require 'ruby-mode)
 (require 'inf-ruby)
+(require 'which-func)
 
 (defvar ruby-compilation-error-regexp
   "^\\([[:space:]]*\\|.*\\[\\|[^\*].*at \\)\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)[]:)\n]?"
@@ -59,6 +63,7 @@
   (interactive "FRuby Comand: ")
   (let ((name (file-name-nondirectory (car (split-string cmd))))
 	(cmdlist (cons ruby-compliation-executable
+                       ;; What on earth is ruby-args-to-list?
                        (ruby-args-to-list (expand-file-name cmd)))))
     (pop-to-buffer (ruby-do-run-w/compilation name cmdlist))))
 
@@ -78,6 +83,22 @@
   "Run the current buffer through Ruby compilation."
   (interactive)
   (ruby-run-w/compilation (buffer-file-name)))
+
+(defun ruby-compile-this-test ()
+  "Run the test at point through Ruby compilation."
+  (interactive)
+  (let ((method (which-function)))
+    (if (or (not method)
+            (not (string-match "#test_" method)))
+        (message "Point is not in a test.")
+      (let ((test-name (cadr (split-string method "#"))))
+        (pop-to-buffer (ruby-do-run-w/compilation
+                        (format "ruby: %s - %s"
+                                (file-name-nondirectory (buffer-file-name))
+                                test-name)
+                        (list ruby-compilation-executable
+                              (buffer-file-name)
+                              "-n" test-name)))))))
 
 (defun ruby-do-run-w/compilation (name cmdlist)
   (let ((comp-buffer-name (format "*%s*" name)))
@@ -150,7 +171,8 @@ compilation buffer."
   " Ruby:Comp"
   ruby-compilation-minor-mode-map)
 
-(define-key 'ruby-mode-map (kbd "C-x t") 'ruby-compile-this-buffer)
+(define-key ruby-mode-map (kbd "C-x t") 'ruby-compile-this-buffer)
+(define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compile-this-test)
 
 (provide 'ruby-compilation)
 ;;; ruby-compilation.el ends here
