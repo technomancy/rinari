@@ -62,7 +62,7 @@
   "Run a ruby process dumping output to a ruby compilation buffer."
   (interactive "FRuby Comand: ")
   (let ((name (file-name-nondirectory (car (split-string cmd))))
-	(cmdlist (cons ruby-compliation-executable
+	(cmdlist (cons ruby-compilation-executable
                        ;; What on earth is ruby-args-to-list?
                        (ruby-args-to-list (expand-file-name cmd)))))
     (pop-to-buffer (ruby-do-run-w/compilation name cmdlist))))
