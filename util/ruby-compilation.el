@@ -31,12 +31,17 @@
 ;; ruby-rake-w/compilation
 ;;
 
+;;; TODO:
+
+;; Clean up function names so they use a common prefix.
+
 ;;; Code:
 (require 'ansi-color)
 (require 'pcmpl-rake)
+(require 'compile)
+(require 'inf-ruby)
 
 (defvar ruby-compilation-error-regexp
-  ;; "^\\([[:space:]]*\\|.*\\[\\|.*at \\)\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)[]:)$]"
   "^\\([[:space:]]*\\|.*\\[\\|[^\*].*at \\)\\[?\\([^[:space:]]*\\):\\([[:digit:]]+\\)[]:)\n]?"
   "regular expression to match errors in ruby process output")
 
@@ -45,11 +50,16 @@
   "a version of `compilation-error-regexp-alist' to be used in
   rails logs (should be used with `make-local-variable')")
 
+(defvar ruby-compilation-executable
+  "ruby"
+  "What bin to use to launch the tests. Override if you use JRuby etc.")
+
 (defun ruby-run-w/compilation (cmd)
   "Run a ruby process dumping output to a ruby compilation buffer."
   (interactive "FRuby Comand: ")
   (let ((name (file-name-nondirectory (car (split-string cmd))))
-	(cmdlist (cons "ruby" (ruby-args-to-list (expand-file-name cmd)))))
+	(cmdlist (cons ruby-compliation-executable
+                       (ruby-args-to-list (expand-file-name cmd)))))
     (pop-to-buffer (ruby-do-run-w/compilation name cmdlist))))
 
 (defun ruby-rake-w/compilation (&optional edit task)
@@ -63,6 +73,11 @@
     (pop-to-buffer (ruby-do-run-w/compilation
 		    "rake" (cons "rake"
 				 (ruby-args-to-list rake-args))))))
+
+(defun ruby-compile-this-buffer ()
+  "Run the current buffer through Ruby compilation."
+  (interactive)
+  (ruby-run-w/compilation (buffer-file-name)))
 
 (defun ruby-do-run-w/compilation (name cmdlist)
   (let ((comp-buffer-name (format "*%s*" name)))
@@ -134,6 +149,8 @@ compilation buffer."
   nil
   " Ruby:Comp"
   ruby-compilation-minor-mode-map)
+
+(define-key 'ruby-mode-map (kbd "C-x t") 'ruby-compile-this-buffer)
 
 (provide 'ruby-compilation)
 ;;; ruby-compilation.el ends here
