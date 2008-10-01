@@ -2,6 +2,13 @@
 
 ;; Copyright (C) 2008 Eric Schulte
 
+;; Author: Eric Schulte
+;; URL: http://www.emacswiki.org/cgi-bin/emacs/ruby-compilation.el
+;; Version: 0.5
+;; Created: 2008-08-23
+;; Keywords: test convenience
+;; Package-Requires: (("ruby-mode") ("inf-ruby"))
+
 ;;; License:
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -34,14 +41,14 @@
 ;;; TODO:
 
 ;; Clean up function names so they use a common prefix.
-;; "p" doesn't work at the end of the compilation buffer
+;; "p" doesn't work at the end of the compilation buffer.
+;; Package it up with dependencies for ELPA.
 
 ;;; Code:
 
 (require 'ansi-color)
 (require 'pcmpl-rake)
 (require 'compile)
-(require 'ruby-mode)
 (require 'inf-ruby)
 (require 'which-func)
 
@@ -54,8 +61,7 @@
   "a version of `compilation-error-regexp-alist' to be used in
   rails logs (should be used with `make-local-variable')")
 
-(defvar ruby-compilation-executable
-  "ruby"
+(defvar ruby-compilation-executable "ruby"
   "What bin to use to launch the tests. Override if you use JRuby etc.")
 
 (defun ruby-run-w/compilation (cmd)
@@ -123,6 +129,7 @@
 
 (defun ruby-compilation-insertion-filter (proc string)
   "Insert text to buffer stripping ansi color codes"
+  ;; Can we use ansi-color-apply-on-region instead?
   (with-current-buffer (process-buffer proc)
     (let ((moving (= (point) (process-mark proc))))
       (save-excursion
@@ -171,8 +178,11 @@ compilation buffer."
   " Ruby:Comp"
   ruby-compilation-minor-mode-map)
 
-(define-key ruby-mode-map (kbd "C-x t") 'ruby-compile-this-buffer)
-(define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compile-this-test)
+;; So we can invoke it easily.
+(eval-after-load 'ruby-mode
+  '(progn
+     (define-key ruby-mode-map (kbd "C-x t") 'ruby-compile-this-buffer)
+     (define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compile-this-test)))
 
 (provide 'ruby-compilation)
 ;;; ruby-compilation.el ends here
