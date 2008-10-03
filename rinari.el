@@ -250,7 +250,7 @@ don't include an '='."
       (message "not in a view"))))
 
 (defvar rinari-rgrep-file-endings
-  "*.rb *.*"
+  "*.[^l]*"
   "Ending of files to search for matches using `rinari-rgrep'")
 
 (defun rinari-rgrep (&optional arg)
@@ -259,8 +259,9 @@ With optional prefix argument just run `rgrep'."
   (interactive "P")
   (grep-compute-defaults)
   (if arg (call-interactively 'rgrep)
-    (funcall 'rgrep (read-from-minibuffer "search for: ")
-	     rinari-rgrep-file-endings (rinari-root))))
+    (let ((word (thing-at-point 'word)))
+      (funcall 'rgrep (read-from-minibuffer "search for: " word)
+	       rinari-rgrep-file-endings (rinari-root)))))
 
 ;;--------------------------------------------------------------------
 ;; rinari movement using jump.el
