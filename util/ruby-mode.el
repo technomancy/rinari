@@ -3,8 +3,10 @@
 ;; Copyright (C) 1994-2008 Yukihiro Matsumoto, Nobuyoshi Nakada
 
 ;; Authors: Yukihiro Matsumoto, Nobuyoshi Nakada
+;; URL: http://www.emacswiki.org/cgi-bin/wiki/RubyMode
 ;; Created: Fri Feb  4 14:49:13 JST 1994
-;; Keywords: languages
+;; Keywords: languages ruby
+;; Version: 1.0
 
 ;; This file is not yet part of GNU Emacs.
 
@@ -14,7 +16,6 @@
 
 ;;; Todo:
 
-;; set auto-mode-alist and interpreter-mode-alist with autoload?
 ;; various docstrings labelled below with TODOs
 
 ;;; Code:
@@ -1381,6 +1382,17 @@ See `font-lock-syntax-table'.")
    )
   "Additional expressions to highlight in ruby mode.")
 
+;; Invoke ruby-mode when appropriate
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.rb$" . ruby-mode))
+
+;;;###autoload
+(add-to-list 'interpreter-mode-alist '("ruby" . ruby-mode))
+(add-to-list 'interpreter-mode-alist '("rbx" . ruby-mode))
+(add-to-list 'interpreter-mode-alist '("jruby" . ruby-mode))
+(add-to-list 'interpreter-mode-alist '("ruby1.9" . ruby-mode))
+(add-to-list 'interpreter-mode-alist '("ruby1.8" . ruby-mode))
 
 (provide 'ruby-mode)
 ;;; ruby-mode.el ends here

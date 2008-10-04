@@ -379,7 +379,7 @@ renders and redirects to find the final controller or view."
 			    (string-match "#\\(.*\\)" raw-method)
 			    (match-string 1 raw-method))))
 	  (if (and file method) (rinari-follow-controller-and-action file method))))
-      . "app/views/\\1/\\2\\..*")
+      . "app/views/\\1/\\2.*")
      ("app/helpers/\\1_helper.rb"              . "app/views/\\1/.*")
      ("db/migrate/.*create_\\1.rb"             . "app/views/\\1/.*")
      ("spec/models/\\1_spec.rb"                . "app/views/\\1/.*")
