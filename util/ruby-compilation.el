@@ -34,8 +34,10 @@
 ;;
 ;; The functions you will probably want to use are
 ;; 
-;; ruby-run-w/compilation
-;; ruby-rake-w/compilation
+;; ruby-compilation-run
+;; ruby-compilation-rake
+;; ruby-compilation-this-buffer (C-x t)
+;; ruby-compilation-this-buffer (C-x C-t)
 ;;
 
 ;;; TODO:
@@ -64,16 +66,16 @@
 (defvar ruby-compilation-executable "ruby"
   "What bin to use to launch the tests. Override if you use JRuby etc.")
 
-(defun ruby-run-w/compilation (cmd)
+(defun ruby-compilation-run (cmd)
   "Run a ruby process dumping output to a ruby compilation buffer."
   (interactive "FRuby Comand: ")
   (let ((name (file-name-nondirectory (car (split-string cmd))))
 	(cmdlist (cons ruby-compilation-executable
                        ;; What on earth is ruby-args-to-list?
                        (ruby-args-to-list (expand-file-name cmd)))))
-    (pop-to-buffer (ruby-do-run-w/compilation name cmdlist))))
+    (pop-to-buffer (ruby-compilation-do name cmdlist))))
 
-(defun ruby-rake-w/compilation (&optional edit task)
+(defun ruby-compilation-rake (&optional edit task)
   "Run a rake process dumping output to a ruby compilation buffer."
   (interactive "P")
   (let* ((task (or task (if (stringp edit) edit)
@@ -81,16 +83,16 @@
 	 (rake-args (if (and edit (not (stringp edit)))
 			(read-from-minibuffer "Edit Rake Command: " (concat task " "))
 		      task)))
-    (pop-to-buffer (ruby-do-run-w/compilation
+    (pop-to-buffer (ruby-compilation-do
 		    "rake" (cons "rake"
 				 (ruby-args-to-list rake-args))))))
 
-(defun ruby-compile-this-buffer ()
+(defun ruby-compilation-this-buffer ()
   "Run the current buffer through Ruby compilation."
   (interactive)
-  (ruby-run-w/compilation (buffer-file-name)))
+  (ruby-compilation-run (buffer-file-name)))
 
-(defun ruby-compile-this-test ()
+(defun ruby-compilation-this-test ()
   "Run the test at point through Ruby compilation."
   (interactive)
   (let ((method (which-function)))
@@ -98,7 +100,7 @@
             (not (string-match "#test_" method)))
         (message "Point is not in a test.")
       (let ((test-name (cadr (split-string method "#"))))
-        (pop-to-buffer (ruby-do-run-w/compilation
+        (pop-to-buffer (ruby-compilation-do
                         (format "ruby: %s - %s"
                                 (file-name-nondirectory (buffer-file-name))
                                 test-name)
@@ -106,7 +108,7 @@
                               (buffer-file-name)
                               "-n" test-name)))))))
 
-(defun ruby-do-run-w/compilation (name cmdlist)
+(defun ruby-compilation-do (name cmdlist)
   (let ((comp-buffer-name (format "*%s*" name)))
     (unless (comint-check-proc comp-buffer-name)
       ;; (if (get-buffer comp-buffer-name) (kill-buffer comp-buffer-name)) ;; actually rather keep
@@ -159,30 +161,28 @@ compilation buffer."
     (forward-line 1))
   (compilation-next-error 1) (recenter))
 
-;; minor mode
-(defvar ruby-compilation-minor-mode-map
-  (let ((map (make-sparse-keymap)))
-    map)
-  "Key map for Ruby Compilation minor mode.")
-
-(define-key ruby-compilation-minor-mode-map "p"    'previous-error-no-select)
-(define-key ruby-compilation-minor-mode-map "n"    'next-error-no-select)
-(define-key ruby-compilation-minor-mode-map "\M-p" 'ruby-compilation-previous-error-group)
-(define-key ruby-compilation-minor-mode-map "\M-n" 'ruby-compilation-next-error-group)
-(define-key ruby-compilation-minor-mode-map (kbd "C-c C-c") 'comint-interrupt-subjob)
-
 (define-minor-mode ruby-compilation-minor-mode
   "Enable Ruby Compilation minor mode providing some key-bindings
   for navigating ruby compilation buffers."
   nil
-  " Ruby:Comp"
+  " ruby:comp"
   ruby-compilation-minor-mode-map)
+
+(defvar ruby-compilation-minor-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "p"    'previous-error-no-select)
+    (define-key map "n"    'next-error-no-select)
+    (define-key map "\M-p" 'ruby-compilation-previous-error-group)
+    (define-key map "\M-n" 'ruby-compilation-next-error-group)
+    (define-key map (kbd "C-c C-c") 'comint-interrupt-subjob)
+    map)
+  "Key map for Ruby Compilation minor mode.")
 
 ;; So we can invoke it easily.
 (eval-after-load 'ruby-mode
   '(progn
-     (define-key ruby-mode-map (kbd "C-x t") 'ruby-compile-this-buffer)
-     (define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compile-this-test)))
+     (define-key ruby-mode-map (kbd "C-x t") 'ruby-compilation-this-buffer)
+     (define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compilation-this-test)))
 
 (provide 'ruby-compilation)
 ;;; ruby-compilation.el ends here
