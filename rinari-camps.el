@@ -16,7 +16,7 @@ prefix argument allows editing of the server command arguments."
 	 (command (if edit-cmd-args
 		      (read-string "" (concat command " "))
 		    command)))
-    (ruby-run-w/compilation command)))
+    (ruby-compilation-run command)))
 
 (defun rinari-camps-console (&optional edit-cmd-args)
   "Run script/console in a compilation buffer, with command
