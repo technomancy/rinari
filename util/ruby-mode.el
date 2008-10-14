@@ -214,6 +214,10 @@ Also ignores spaces after parenthesis when 'space."
   "Alist to map encoding name from Emacs to Ruby."
   :group 'ruby)
 
+(defcustom ruby-insert-encoding-magic-comment t
+  "*Insert a magic emacs 'coding' comment upon save if this is non-nil."
+  :type 'boolean :group 'ruby)
+
 (defcustom ruby-use-encoding-map t
   "Use `ruby-encoding-map' to set encoding magic comment if this is non-nil."
   :type 'boolean :group 'ruby)
@@ -318,7 +322,8 @@ Also ignores spaces after parenthesis when 'space."
                               ((forward-char)))))
                  (insert coding-system)))
               ((looking-at "\\s *#.*coding\\s *[:=]"))
-              (t (insert "# -*- coding: " coding-system " -*-\n"))
+              (t (when ruby-insert-encoding-magic-comment
+                   (insert "# -*- coding: " coding-system " -*-\n")))
               )))))
 
 ;;;###autoload
