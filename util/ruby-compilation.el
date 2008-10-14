@@ -184,5 +184,10 @@ compilation buffer."
      (define-key ruby-mode-map (kbd "C-x t") 'ruby-compilation-this-buffer)
      (define-key ruby-mode-map (kbd "C-x C-t") 'ruby-compilation-this-test)))
 
+;; So we don't get warnings with .dir-settings.el files
+(dolist (executable (list "jruby" "rbx" "ruby1.9" "ruby1.8" "ruby"))
+  (add-to-list 'safe-local-variable-values
+               (cons 'ruby-compilation-executable executable)))
+   
 (provide 'ruby-compilation)
 ;;; ruby-compilation.el ends here
