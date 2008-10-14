@@ -161,13 +161,6 @@ compilation buffer."
     (forward-line 1))
   (compilation-next-error 1) (recenter))
 
-(define-minor-mode ruby-compilation-minor-mode
-  "Enable Ruby Compilation minor mode providing some key-bindings
-  for navigating ruby compilation buffers."
-  nil
-  " ruby:comp"
-  ruby-compilation-minor-mode-map)
-
 (defvar ruby-compilation-minor-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "p"    'previous-error-no-select)
@@ -177,6 +170,13 @@ compilation buffer."
     (define-key map (kbd "C-c C-c") 'comint-interrupt-subjob)
     map)
   "Key map for Ruby Compilation minor mode.")
+
+(define-minor-mode ruby-compilation-minor-mode
+  "Enable Ruby Compilation minor mode providing some key-bindings
+  for navigating ruby compilation buffers."
+  nil
+  " ruby:comp"
+  ruby-compilation-minor-mode-map)
 
 ;; So we can invoke it easily.
 (eval-after-load 'ruby-mode

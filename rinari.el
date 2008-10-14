@@ -79,14 +79,14 @@
 (defvar rinari-minor-mode-hook nil
   "*Hook for customising Rinari.")
 
-(defadvice ruby-run-w/compilation (around rinari-run-w/compilation activate)
+(defadvice ruby-compilation-run (around rinari-compilation-run activate)
   "Set default directory to the root of the rails application
   before running ruby processes."
   (let ((default-directory (or (rinari-root) default-directory)))
     ad-do-it
     (rinari-launch)))
 
-(defadvice ruby-rake-w/compilation (around rinari-rake-w/compilation activate)
+(defadvice ruby-compilation-rake (around rinari-compilation-rake activate)
   "Set default directory to the root of the rails application
   before running rake processes."
   (let ((default-directory (or (rinari-root) default-directory)))
@@ -120,7 +120,7 @@ output dumped to a compilation buffer allowing jumping between
 errors and source code.  With optional prefix argument allows
 editing of the rake command arguments."
   (interactive "P")
-  (ruby-rake-w/compilation task edit-cmd-args))
+  (ruby-compilation-rake task edit-cmd-args))
 
 (defun rinari-script (&optional script)
   "Tab completing selection of a script from the script/
@@ -134,7 +134,7 @@ directory of the rails application."
 	      '(("^ +\\(exists\\|create\\) +\\([^[:space:]]+\\.rb\\)" 2 3))
 	    ruby-compilation-error-regexp-alist))
 	 (script (concat "script/" script " ")))
-    (ruby-run-w/compilation (concat root script (read-from-minibuffer script)))))
+    (ruby-compilation-run (concat root script (read-from-minibuffer script)))))
 
 (defun rinari-test (&optional edit-cmd-args)
   "Test the current ruby function.  If current function is not a
@@ -157,7 +157,7 @@ argument allows editing of the test command arguments."
 	 (command (if edit-cmd-args
 		      (read-string "Run w/Compilation: " default-command)
 		    default-command)))
-    (if path (ruby-run-w/compilation command)
+    (if path (ruby-compilation-run command)
       (message "no test available"))))
 
 (defun rinari-console (&optional edit-cmd-args)
@@ -222,7 +222,7 @@ prefix argument allows editing of the server command arguments."
 	 (command (if edit-cmd-args
 		      (read-string "Run Ruby: " (concat script " "))
 		    script)))
-    (ruby-run-w/compilation command)))
+    (ruby-compilation-run command)))
 
 (defun rinari-insert-erb-skeleton (no-equals)
   "Insert an erb skeleton at point, with optional prefix argument

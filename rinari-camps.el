@@ -1,5 +1,40 @@
 ;;; rinari-camps.el --- rinari minor mode for camping
 
+;; Copyright (C) 2008 Eric Schulte
+
+;; Authors: Eric Schulte
+;; Created: 2008-10-06
+;; Keywords: ruby, rails, camping, project, convenience, web
+
+;; This file is NOT part of GNU Emacs.
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;; This file ports some basic Rinari (Ruby on Rails minor mode)
+;; commands for use inside of a Camping (Simple Ruby MVC Framework)
+;; project.
+
+(require 'ruby-mode)
+(require 'inf-ruby)
+(require 'ruby-compilation)
+
 (defun rinari-camps-root () default-directory)
 
 (defun rinari-camps-name ()
@@ -16,7 +51,7 @@ prefix argument allows editing of the server command arguments."
 	 (command (if edit-cmd-args
 		      (read-string "" (concat command " "))
 		    command)))
-    (ruby-run-w/compilation command)))
+    (ruby-compilation-run command)))
 
 (defun rinari-camps-console (&optional edit-cmd-args)
   "Run script/console in a compilation buffer, with command
