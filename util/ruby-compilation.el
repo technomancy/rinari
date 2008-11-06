@@ -96,6 +96,7 @@
   "Run the test at point through Ruby compilation."
   (interactive)
   (let ((method (which-function)))
+    (if (listp method) (setq method (car method)))
     (if (or (not method)
             (not (string-match "#test_" method)))
         (message "Point is not in a test.")
@@ -163,6 +164,7 @@ compilation buffer."
 
 (defvar ruby-compilation-minor-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map "q"    'quit-window)
     (define-key map "p"    'previous-error-no-select)
     (define-key map "n"    'next-error-no-select)
     (define-key map "\M-p" 'ruby-compilation-previous-error-group)
