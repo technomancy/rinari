@@ -9,9 +9,15 @@
                               (set (make-local-variable 'ruby-compilation-test-name-flag)
                                    "-e"))))
 
-;; Redefining this will break regular test/unit ruby-compilation.
-;; Refactor this to use flet so the new definition is buffer-local.
+(fset 'ruby-compilation-this-test-name-old
+  'ruby-compilation-this-test-name)
+
 (defun ruby-compilation-this-test-name ()
+  (if (equal ruby-compilation-executable "spec")
+      (ruby-compilation-this-spec-name)
+    (ruby-compilation-this-test-name-old)))
+    
+(defun ruby-compilation-this-spec-name ()
   "Which test are we currently in?"
   (save-excursion
     (search-backward-regexp "it [\"']\\(.*\\)[\"'] do")
