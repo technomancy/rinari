@@ -228,8 +228,8 @@ prefix argument allows editing of the server command arguments."
   "Insert an erb skeleton at point, with optional prefix argument
 don't include an '='."
   (interactive "P")
-  (insert "<%") (unless no-equals (insert "=")) (insert "  %>")
-  (backward-char 3))
+  (insert "<%") (if no-equals (insert "  -") (insert "=  ")) (insert "%>")
+  (if no-equals (backward-char 4) (backward-char 3)))
 
 (defun rinari-extract-partial (begin end partial-name)
   (interactive "r\nsName your partial: ")
@@ -286,7 +286,13 @@ the hash at `point', then return (CONTROLLER . ACTION)"
 		  (re-search-forward rinari-ruby-hash-regexp end t))
 	(if (> (length (match-string 3)) 1)
 	    (case (intern (match-string 1))
-	      (:partial (setf action (concat "_" (match-string 3))))
+	      (:partial
+	       (let ((partial (match-string 3)))
+		 (if (string-match "\\(.+\\)/\\(.+\\)" partial)
+		     (progn
+		       (setf controller (match-string 1 partial))
+		       (setf action (concat "_" (match-string 2 partial))))
+		   (setf action (concat "_" partial)))))
 	      (:action  (setf action (match-string 3)))
 	      (:controller (setf controller (match-string 3)))))))
     (cons controller action)))
@@ -481,7 +487,18 @@ renders and redirects to find the final controller or view."
    (stylesheet "y" ((t . "public/stylesheets/.*")) nil)
    (javascript "j" ((t . "public/javascripts/.*")) nil)
    (plugin "l" ((t . "vendor/plugins/")) nil)
-   (file-in-project "f" ((t . ".*")) nil)))
+   (file-in-project "f" ((t . ".*")) nil)
+   (by-context
+    ";"
+    (((lambda () ;; Find-by-Context
+	(let ((path (buffer-file-name))
+	      cv)
+	  (when (string-match ".*/\\(.+?\\)/\\(.+?\\)\\..*" path)
+	    (setf cv (cons (match-string 1 path) (match-string 2 path)))
+	    (when (re-search-forward "<%=[ \n\r]*render(? *" nil t)
+	      (setf cv (rinari-ruby-values-from-render (car cv) (cdr cv)))
+	      (list (car cv) (cdr cv))))))
+      . "app/views/\\1/\\2.*")))))
 
 (mapcar
  (lambda (type)
@@ -516,7 +533,8 @@ renders and redirects to find the final controller or view."
     ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
     ("r" . 'rinari-rake)                ("c" . 'rinari-console)
     ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep)
-    ("x" . 'rinari-extract-partial))
+    ("x" . 'rinari-extract-partial)
+    (";" . 'rinari-find-by-context)     ("'" . 'rinari-find-by-context))
   "alist mapping of keys to functions in `rinari-minor-mode'")
 
 (mapcar (lambda (el) (rinari-bind-key-to-func (car el) (cdr el)))

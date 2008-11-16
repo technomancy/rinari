@@ -34,6 +34,19 @@ promotion!!
 When finding a view from a controller if there is no method name, then
 select from the related directory
 
+* DONE add find-by context
+  :PROPERTIES:
+  :suggested-by: vylu
+  :END:
+
+Hi Eric,
+As I understand, we are talking here about rinari-find-by-context
+function, which is used to open file by current context. For example
+if I am in <%= render :partial => "something_anything" %>, it should
+open _something_anything.html.erb partial. This functionality is still
+left in rhtml mode (although it is broken there), but I think it
+should be moved to rinari again.
+
 * DONE upodate documentation for instillation
   :PROPERTIES:
   :suggested-by: Antti
