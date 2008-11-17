@@ -30,9 +30,22 @@ promotion!!
 
 - [[http://www.emacswiki.org/cgi-bin/wiki/EmacsScreencasts]]
 
-* TODO updates to finders
+* DONE improvements to finders
+  :PROPERTIES:
+  :suggested-by: vylu
+  :END:
+
 When finding a view from a controller if there is no method name, then
-select from the related directory
+select from the related directory.
+
+more generally...
+
+if rinari-find-* is called with a prefix argument then just run the
+default find at the end
+
+or even better...
+
+*implemented* if no file is found with a find pair, then keep moving.
 
 * DONE add find-by context
   :PROPERTIES:
