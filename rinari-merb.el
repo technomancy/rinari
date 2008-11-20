@@ -100,7 +100,9 @@
 
 (defun rinari-merb-root (&optional dir home)
   (or dir (setq dir default-directory))
-  (if (file-exists-p (expand-file-name "merb.thor" dir))
+  (if (file-exists-p (expand-file-name
+		      "init.rb"
+		      (file-name-as-directory (expand-file-name "config" dir))))
       dir
     (let ((new-dir (expand-file-name (file-name-as-directory "..") dir)))
       (unless (string-match "\\(^[[:alpha:]]:/$\\|^/$\\)" dir)

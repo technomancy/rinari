@@ -95,7 +95,7 @@
 
 (defun rinari-parse-yaml ()
   (let ((start (point))
-	(end (save-excursion (re-search-forward "^$" nil t) (point)))
+	(end (save-excursion (re-search-forward "^[^:]*$" nil t) (point)))
 	alist)
     (while (and (< (point) end)
 		(re-search-forward "^ *\\(.*\\): \\(.*\\)$" nil t))
@@ -200,6 +200,7 @@ from your conf/database.sql file."
 	       (adapter (or (cdr (assoc "adapter" database-alist)) "sqlite"))
 	       (sql-user (or (cdr (assoc "username" database-alist)) "root"))
 	       (sql-password (or (cdr (assoc "password" database-alist)) ""))
+	       (sql-password (if (> (length sql-password) 0) sql-password nil))
 	       (sql-database (or (cdr (assoc "database" database-alist))
 				 (concat (file-name-nondirectory (rinari-root))
 					 "_" environment)))

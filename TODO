@@ -47,10 +47,16 @@ or even better...
 
 *implemented* if no file is found with a find pair, then keep moving.
 
-* TODO Merb support [0/3]
+* TODO Merb support [1/4]
   :PROPERTIES:
   :suggested-by: Jorge Calás Lozano
   :END:
+
+** DONE new Merb Root
+
+I think it's better to rely on config/init.rb that file should be on
+every merb project, merb.thor doesn't, in fact my "library" project
+doesn't have it.
 
 ** TODO pull into rinari-merb
 rinari-merb (minami? why not just rinari-merb? what if someone create a
