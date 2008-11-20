@@ -1,13 +1,9 @@
-;;; rinari.el --- Rinari Is Not A Rails IDE
+;;; rinari-merb.el --- Rinari-Merb Is Not A Merb IDE
 
 ;; Copyright (C) 2008 Phil Hagelberg, Eric Schulte
 
 ;; Authors: Phil Hagelberg, Eric Schulte
-;; URL: http://rinari.rubyforge.org
-;; Version: 2.0
-;; Created: 2006-11-10
-;; Keywords: ruby, rails, project, convenience, web
-;; EmacsWiki: Rinari
+;; Keywords: ruby, rails, project, convenience, web, merb
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -30,10 +26,10 @@
 
 ;;; Commentary:
 
-;; Rinari Is Not A Ruby IDE.
+;; Rinari-Merb Is Not A Merb IDE.
 
-;; Well, ok it kind of is. Rinari is a set of Emacs Lisp modes that is
-;; aimed towards making Emacs into a top-notch Ruby and Rails
+;; Well, ok it kind of is. Rinari-Merb is a set of Emacs Lisp modes
+;; that is aimed towards making Emacs into a top-notch Ruby and Rails
 ;; development environment.
 
 ;; Copy the directory containing this file into your Emacs lisp
@@ -43,13 +39,13 @@
 ;; ;; ido
 ;; (require 'ido)
 ;; (ido-mode t)
-;; ;; rinari
-;; (add-to-list 'load-path "~/.emacs.d/rinari")
-;; (require 'rinari)
+;; ;; rinari-merb
+;; (add-to-list 'load-path "~/.emacs.d/rinari-merb")
+;; (require 'rinari-merb)
 
 ;; Note: if you cloned this from a git repo, you probably have to grab
 ;; the submodules which can be done simply with the following commands
-;; from the root of the rinari directory
+;; from the root of the rinari-merb directory
 
 ;;  git submodule init
 ;;  git submodule update
@@ -71,50 +67,49 @@
 (require 'jump)
 (require 'cl)
 
-(defcustom rinari-tags-file-name
+(defcustom rinari-merb-tags-file-name
   "TAGS"
   "Path to your TAGS file inside of your rails project.  See `tags-file-name'."
-  :group 'rinari)
+  :group 'rinari-merb)
 
-(defvar rinari-minor-mode-hook nil
-  "*Hook for customising Rinari.")
+(defvar rinari-merb-minor-mode-hook nil
+  "*Hook for customising Rinari-Merb.")
 
-(defadvice ruby-compilation-run (around rinari-compilation-run activate)
+(defadvice ruby-compilation-run (around rinari-merb-compilation-run activate)
   "Set default directory to the root of the rails application
   before running ruby processes."
-  (let ((default-directory (or (rinari-root) default-directory)))
+  (let ((default-directory (or (rinari-merb-root) default-directory)))
     ad-do-it
-    (rinari-launch)))
+    (rinari-merb-launch)))
 
-(defadvice ruby-compilation-rake (around rinari-compilation-rake activate)
+(defadvice ruby-compilation-rake (around rinari-merb-compilation-rake activate)
   "Set default directory to the root of the rails application
   before running rake processes."
-  (let ((default-directory (or (rinari-root) default-directory)))
+  (let ((default-directory (or (rinari-merb-root) default-directory)))
     ad-do-it
-    (rinari-launch)))
+    (rinari-merb-launch)))
 
-(defun rinari-parse-yaml ()
+(defun rinari-merb-parse-yaml ()
   (let ((start (point))
 	(end (save-excursion (re-search-forward "^$" nil t) (point)))
 	alist)
     (while (and (< (point) end)
-		(re-search-forward "^ *\\(.*\\): \\(.*\\)$" nil t))
+		(re-search-forward "^ *:?\\(.*\\): \\(.*\\)$" nil t))
       (setf alist (cons (cons (match-string 1) (match-string 2)) alist)))
     alist))
 
-(defun rinari-root (&optional dir home)
+(defun rinari-merb-root (&optional dir home)
   (or dir (setq dir default-directory))
-  (if (file-exists-p (expand-file-name
-		      "environment.rb" (expand-file-name "config" dir)))
+  (if (file-exists-p (expand-file-name "merb.thor" dir))
       dir
     (let ((new-dir (expand-file-name (file-name-as-directory "..") dir)))
       (unless (string-match "\\(^[[:alpha:]]:/$\\|^/$\\)" dir)
-	(rinari-root new-dir)))))
+	(rinari-merb-root new-dir)))))
 
 ;;--------------------------------------------------------------------------------
 ;; user functions
 
-(defun rinari-rake (&optional task edit-cmd-args)
+(defun rinari-merb-rake (&optional task edit-cmd-args)
   "Tab completion selection of a rake task to execute with the
 output dumped to a compilation buffer allowing jumping between
 errors and source code.  With optional prefix argument allows
@@ -122,11 +117,11 @@ editing of the rake command arguments."
   (interactive "P")
   (ruby-compilation-rake task edit-cmd-args))
 
-(defun rinari-script (&optional script)
+(defun rinari-merb-script (&optional script)
   "Tab completing selection of a script from the script/
 directory of the rails application."
   (interactive)
-  (let* ((root (rinari-root))
+  (let* ((root (rinari-merb-root))
 	 (script (or script
 		     (completing-read "Script: " (directory-files (concat root "script") nil "^[^.]"))))
 	 (ruby-compilation-error-regexp-alist ;; for jumping to newly created files
@@ -136,16 +131,16 @@ directory of the rails application."
 	 (script (concat "script/" script " ")))
     (ruby-compilation-run (concat root script (read-from-minibuffer script)))))
 
-(defun rinari-test (&optional edit-cmd-args)
+(defun rinari-merb-test (&optional edit-cmd-args)
   "Test the current ruby function.  If current function is not a
 test, then try to jump to the related test using
-`rinari-find-test'.  Dump output to a compilation buffer allowing
+`rinari-merb-find-test'.  Dump output to a compilation buffer allowing
 jumping between errors and source code.  With optional prefix
 argument allows editing of the test command arguments."
   (interactive "P")
-  (or (string-match "test" (or (ruby-add-log-current-method)
+  (or (string-match "spec" (or (ruby-add-log-current-method)
 			       (file-name-nondirectory (buffer-file-name))))
-      (rinari-find-test))
+      (rinari-merb-find-rspec))
   (let* ((funname (ruby-add-log-current-method))
 	 (fn (and funname
 		  (string-match "#\\(.*\\)" funname)
@@ -160,25 +155,14 @@ argument allows editing of the test command arguments."
     (if path (ruby-compilation-run command)
       (message "no test available"))))
 
-(defun rinari-console (&optional edit-cmd-args)
+(defun rinari-merb-console (&optional edit-cmd-args)
   "Run script/console in a compilation buffer, with command
 history and links between errors and source code.  With optional
 prefix argument allows editing of the console command arguments."
   (interactive "P")
-  (let* ((script ;; (concat (rinari-root) "script/console")
-	  (expand-file-name "console" (file-name-as-directory
-				       (expand-file-name "script" (rinari-root)))))
-	 (command (if edit-cmd-args
-		      (read-string "Run Ruby: " (concat script " "))
-		    script)))
-    (run-ruby command)
-    (save-excursion
-      (pop-to-buffer "*ruby*")
-      (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
-      (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> ")
-      (rinari-launch))))
+  (rinari-merb-merb "console" "-i" edit-cmd-args))
 
-(defun rinari-sql ()
+(defun rinari-merb-sql ()
   "Browse the application's database.  Looks up login information
 from your conf/database.sql file."
   (interactive)
@@ -193,45 +177,47 @@ from your conf/database.sql file."
 				    (expand-file-name
 				     "database.yml"
 				     (file-name-as-directory
-				      (expand-file-name "config" (rinari-root)))))
+				      (expand-file-name "config" (rinari-merb-root)))))
 				   (goto-char (point-min))
-				   (re-search-forward (concat "^" environment ":"))
-				   (rinari-parse-yaml))))
+				   (re-search-forward (concat "^:?" environment ":"))
+				   (rinari-merb-parse-yaml))))
 	       (adapter (or (cdr (assoc "adapter" database-alist)) "sqlite"))
 	       (sql-user (or (cdr (assoc "username" database-alist)) "root"))
 	       (sql-password (or (cdr (assoc "password" database-alist)) ""))
 	       (sql-database (or (cdr (assoc "database" database-alist))
-				 (concat (file-name-nondirectory (rinari-root))
+				 (concat (file-name-nondirectory (rinari-merb-root))
 					 "_" environment)))
 	       (server (or (cdr (assoc "host" database-alist)) "localhost"))
 	       (port (cdr (assoc "port" database-alist)))
 	       (sql-server (if port (concat server ":" port) server)))
 	  (if (string-match "sqlite" adapter) (setf adapter "sqlite"))
 	  (eval (list (intern (concat "sql-" adapter))))
-	  (rename-buffer (sql-name environment)) (rinari-launch))))))
+	  (rename-buffer (sql-name environment)) (rinari-merb-launch))))))
 
-(defun rinari-web-server (&optional edit-cmd-args)
-  "Run script/server.  Dump output to a compilation buffer
+(defun rinari-merb-merb (&optional name args edit-cmd-args)
+  "Run merb.  Dump output to a compilation buffer
 allowing jumping between errors and source code.  With optional
 prefix argument allows editing of the server command arguments."
   (interactive "P")
-  (let* ((default-directory (rinari-root))
-	 (script (expand-file-name "server"
-				   (file-name-as-directory
-				    (expand-file-name "script" (rinari-root)))))
-	 (command (if edit-cmd-args
-		      (read-string "Run Ruby: " (concat script " "))
-		    script)))
-    (ruby-compilation-run command)))
+  (let* ((default-directory (rinari-merb-root))
+	 (name (if name name "server"))
+	 (args (if args args ""))
+	 (args (if edit-cmd-args
+		   (read-from-minibuffer "Edit Merb Command: " args)
+		 args)))
+    (pop-to-buffer (ruby-compilation-do
+		    name (cons "merb"
+				   (ruby-args-to-list args))))
+    (rinari-merb-launch)))
 
-(defun rinari-insert-erb-skeleton (no-equals)
+(defun rinari-merb-insert-erb-skeleton (no-equals)
   "Insert an erb skeleton at point, with optional prefix argument
 don't include an '='."
   (interactive "P")
-  (insert "<%") (if no-equals (insert "  -") (insert "=  ")) (insert "%>")
-  (if no-equals (backward-char 4) (backward-char 3)))
+  (insert "<%") (unless no-equals (insert "=")) (insert "  %>")
+  (backward-char 3))
 
-(defun rinari-extract-partial (begin end partial-name)
+(defun rinari-merb-extract-partial (begin end partial-name)
   (interactive "r\nsName your partial: ")
   (let* ((path (buffer-file-name)) ending)
     (if (string-match "view" path)
@@ -249,11 +235,11 @@ don't include an '='."
 	  (insert (concat "<%= render :partial => '" partial-name "' %>\n")))
       (message "not in a view"))))
 
-(defvar rinari-rgrep-file-endings
+(defvar rinari-merb-rgrep-file-endings
   "*.[^l]*"
-  "Ending of files to search for matches using `rinari-rgrep'")
+  "Ending of files to search for matches using `rinari-merb-rgrep'")
 
-(defun rinari-rgrep (&optional arg)
+(defun rinari-merb-rgrep (&optional arg)
   "Search through the rails project for a string or `regexp'.
 With optional prefix argument just run `rgrep'."
   (interactive "P")
@@ -261,21 +247,21 @@ With optional prefix argument just run `rgrep'."
   (if arg (call-interactively 'rgrep)
     (let ((word (thing-at-point 'word)))
       (funcall 'rgrep (read-from-minibuffer "search for: " word)
-	       rinari-rgrep-file-endings (rinari-root)))))
+	       rinari-merb-rgrep-file-endings (rinari-merb-root)))))
 
 ;;--------------------------------------------------------------------
-;; rinari movement using jump.el
+;; rinari-merb movement using jump.el
 
-(defun rinari-generate (type name)
+(defun rinari-merb-generate (type name)
   (message (shell-command-to-string
-	    (format "ruby %sscript/generate %s %s" (rinari-root) type
+	    (format "ruby %sscript/generate %s %s" (rinari-merb-root) type
 		    (read-from-minibuffer (format "create %s: " type) name)))))
 
-(defvar rinari-ruby-hash-regexp
+(defvar rinari-merb-ruby-hash-regexp
   "\\(:[^[:space:]]*?\\)[[:space:]]*\\(=>[[:space:]]*[\"\':]?\\([^[:space:]]*?\\)[\"\']?[[:space:]]*\\)?[,){}\n]"
   "Regexp to match subsequent key => value pairs of a ruby hash.")
 
-(defun rinari-ruby-values-from-render (controller action)
+(defun rinari-merb-ruby-values-from-render (controller action)
   "Adjusts CONTROLLER and ACTION acording to keyword arguments in
 the hash at `point', then return (CONTROLLER . ACTION)"
   (let ((end (save-excursion
@@ -283,21 +269,15 @@ the hash at `point', then return (CONTROLLER . ACTION)"
 	       (+ 1 (point)))))
     (save-excursion
       (while (and (< (point) end)
-		  (re-search-forward rinari-ruby-hash-regexp end t))
+		  (re-search-forward rinari-merb-ruby-hash-regexp end t))
 	(if (> (length (match-string 3)) 1)
 	    (case (intern (match-string 1))
-	      (:partial
-	       (let ((partial (match-string 3)))
-		 (if (string-match "\\(.+\\)/\\(.+\\)" partial)
-		     (progn
-		       (setf controller (match-string 1 partial))
-		       (setf action (concat "_" (match-string 2 partial))))
-		   (setf action (concat "_" partial)))))
+	      (:partial (setf action (concat "_" (match-string 3))))
 	      (:action  (setf action (match-string 3)))
 	      (:controller (setf controller (match-string 3)))))))
     (cons controller action)))
 
-(defun rinari-which-render (renders)
+(defun rinari-merb-which-render (renders)
   (let ((path (jump-completing-read
 	       "Follow: "
 	       (mapcar (lambda (lis)
@@ -306,7 +286,7 @@ the hash at `point', then return (CONTROLLER . ACTION)"
     (string-match "\\(.*\\)/\\(.*\\)" path)
     (cons (match-string 1 path) (match-string 2 path))))
 
-(defun rinari-follow-controller-and-action (controller action)
+(defun rinari-merb-follow-controller-and-action (controller action)
   "Follow the current controller-and-action through all of the
 renders and redirects to find the final controller or view."
   (save-excursion ;; if we can find the controller#action pair
@@ -317,14 +297,14 @@ renders and redirects to find the final controller or view."
 	  (ruby-forward-sexp)
 	  ;; collect redirection options and pursue
 	  (while (re-search-backward "re\\(?:direct_to\\|nder\\)" start t)
-	    (add-to-list 'renders (rinari-ruby-values-from-render controller action)))
+	    (add-to-list 'renders (rinari-merb-ruby-values-from-render controller action)))
 	  (let ((render (if (equalp 1 (length renders))
 			    (car renders)
-			  (rinari-which-render renders))))
+			  (rinari-merb-which-render renders))))
 	    (if (and (equalp (cdr render) action)
 		     (equalp (car render) controller))
 		(list controller action) ;; directed to here so return
-	      (rinari-follow-controller-and-action (or (car render)
+	      (rinari-merb-follow-controller-and-action (or (car render)
 						       controller)
 						   (or (cdr render)
 						       action)))))
@@ -332,15 +312,15 @@ renders and redirects to find the final controller or view."
       (list controller action))))
 
 (setf
- rinari-jump-schema
+ rinari-merb-jump-schema
  '((model
     "m"
-    (("app/controllers/\\1_controller.rb#\\2"  . "app/models/\\1.rb#\\2")
+    (("app/controllers/\\1.rb#\\2"  . "app/models/\\1.rb#\\2")
      ("app/views/\\1/.*"                       . "app/models/\\1.rb")
      ("app/helpers/\\1_helper.rb"              . "app/models/\\1.rb")
-     ("db/migrate/.*create_\\1.rb"             . "app/models/\\1.rb")
+     ("schema/migrations/.*_\\1_migration.rb"  . "app/models/\\1.rb")
      ("spec/models/\\1_spec.rb"                . "app/models/\\1.rb")
-     ("spec/controllers/\\1_controller_spec.rb". "app/models/\\1.rb")
+     ("spec/controllers/\\1_spec.rb". "app/models/\\1.rb")
      ("spec/views/\\1/.*"                      . "app/models/\\1.rb")
      ("spec/fixtures/\\1.yml"                  . "app/models/\\1.rb")
      ("test/functional/\\1_controller_test.rb" . "app/models/\\1.rb")
@@ -349,27 +329,27 @@ renders and redirects to find the final controller or view."
      ("test/fixtures/\\1.yml"                  . "app/models/\\1.rb")
      (t                                        . "app/models/"))
     (lambda (path)
-      (rinari-generate "model"
+      (rinari-merb-generate "model"
 		       (and (string-match ".*/\\(.+?\\)\.rb" path)
 			    (match-string 1 path)))))
    (controller
     "c"
-    (("app/models/\\1.rb"                      . "app/controllers/\\1_controller.rb")
-     ("app/views/\\1/\\2\\..*"                 . "app/controllers/\\1_controller.rb#\\2")
-     ("app/helpers/\\1_helper.rb"              . "app/controllers/\\1_controller.rb")
-     ("db/migrate/.*create_\\1.rb"             . "app/controllers/\\1_controller.rb")
-     ("spec/models/\\1_spec.rb"                . "app/controllers/\\1_controller.rb")
+    (("app/models/\\1.rb"                      . "app/controllers/\\1.rb")
+     ("app/views/\\1/\\2\\..*"                 . "app/controllers/\\1.rb#\\2")
+     ("app/helpers/\\1_helper.rb"              . "app/controllers/\\1.rb")
+     ("schema/migrations/.*_\\1_migration.rb"  . "app/controllers/\\1.rb")
+     ("spec/models/\\1_spec.rb"                . "app/controllers/\\1.rb")
      ("spec/controllers/\\1_spec.rb"           . "app/controllers/\\1.rb")
-     ("spec/views/\\1/\\2\\.*_spec.rb"         . "app/controllers/\\1_controller.rb#\\2")
-     ("spec/fixtures/\\1.yml"                  . "app/controllers/\\1_controller.rb")
+     ("spec/views/\\1/\\2\\.*_spec.rb"         . "app/controllers/\\1.rb#\\2")
+     ("spec/fixtures/\\1.yml"                  . "app/controllers/\\1.rb")
      ("test/functional/\\1_test.rb#test_\\2"   . "app/controllers/\\1.rb#\\2")
      ("test/functional/\\1_test.rb"            . "app/controllers/\\1.rb")
-     ("test/unit/\\1_test.rb#test_\\2"         . "app/controllers/\\1_controller.rb#\\2")
-     ("test/unit/\\1_test.rb"                  . "app/controllers/\\1_controller.rb")
-     ("test/fixtures/\\1.yml"                  . "app/controllers/\\1_controller.rb")
+     ("test/unit/\\1_test.rb#test_\\2"         . "app/controllers/\\1.rb#\\2")
+     ("test/unit/\\1_test.rb"                  . "app/controllers/\\1.rb")
+     ("test/fixtures/\\1.yml"                  . "app/controllers/\\1.rb")
      (t                                        . "app/controllers/"))
     (lambda (path)
-      (rinari-generate "controller"
+      (rinari-merb-generate "controller"
 		       (and (string-match ".*/\\(.+?\\)_controller\.rb" path)
 			    (match-string 1 path)))))
    (view
@@ -385,11 +365,10 @@ renders and redirects to find the final controller or view."
 	       (method (and file raw-method ;; action
 			    (string-match "#\\(.*\\)" raw-method)
 			    (match-string 1 raw-method))))
-	  (if (and file method) (rinari-follow-controller-and-action file method))))
+	  (if (and file method) (rinari-merb-follow-controller-and-action file method))))
       . "app/views/\\1/\\2.*")
-     ("app/controllers/\\1_controller.rb"      . "app/views/\\1/.*")
      ("app/helpers/\\1_helper.rb"              . "app/views/\\1/.*")
-     ("db/migrate/.*create_\\1.rb"             . "app/views/\\1/.*")
+     ("schema/migrations/.*_\\1_migration.rb"  . "app/views/\\1/.*")
      ("spec/models/\\1_spec.rb"                . "app/views/\\1/.*")
      ("spec/controllers/\\1_spec.rb"           . "app/views/\\1/.*")
      ("spec/views/\\1/\\2_spec.rb"             . "app/views/\\1/\\2.*")
@@ -405,15 +384,17 @@ renders and redirects to find the final controller or view."
      ("app/controllers/\\1.rb#\\2"             . "test/functional/\\1_test.rb#test_\\2")
      ("app/views/\\1/_?\\2\\..*"               . "test/functional/\\1_controller_test.rb#test_\\2")
      ("app/helpers/\\1_helper.rb"              . "test/functional/\\1_controller_test.rb")
-     ("db/migrate/.*create_\\1.rb"             . "test/unit/\\1_test.rb")
+     ("schema/migrations/.*_\\1_migration.rb"  . "test/unit/\\1_test.rb")
      ("test/functional/\\1_controller_test.rb" . "test/unit/\\1_test.rb")
      ("test/unit/\\1_test.rb"                  . "test/functional/\\1_controller_test.rb")
      (t                                        . "test/.*"))
     t)
    (rspec
     "r"
-    (("app/\\1\\.rb"                           . "spec/\\1_spec.rb")
-     ("app/\\1"                                . "spec/\\1_spec.rb")
+    (("app/models/\\1.rb"                      . "spec/models/\\1_spec.rb")
+     ("app/controllers/\\1.rb"                 . "spec/controllers/\\1_spec.rb")
+     ("app/views/\\1\\..*"                     . "spec/views/\\1_spec.rb")
+     ("schema/migrations/.*_\\1_migration.rb"  . "spec/models/\\1_spec.rb")
      ("spec/views/\\1_spec.rb"                 . "app/views/\\1")
      ("spec/\\1_spec.rb"                       . "app/\\1.rb")
      (t                                        . "spec/.*"))
@@ -421,12 +402,12 @@ renders and redirects to find the final controller or view."
    (fixture
     "x"
     (("app/models/\\1.rb"                      . "test/fixtures/\\1.yml")
-     ("app/controllers/\\1_controller.rb"      . "test/fixtures/\\1.yml")
+     ("app/controllers/\\1.rb"      . "test/fixtures/\\1.yml")
      ("app/views/\\1/.*"                       . "test/fixtures/\\1.yml")
      ("app/helpers/\\1_helper.rb"              . "test/fixtures/\\1.yml")
-     ("db/migrate/.*create_\\1.rb"             . "test/fixtures/\\1.yml")
+     ("schema/migrations/.*_\\1_migration.rb"  . "test/fixtures/\\1.yml")
      ("spec/models/\\1_spec.rb"                . "test/fixtures/\\1.yml")
-     ("spec/controllers/\\1_controller_spec.rb". "test/fixtures/\\1.yml")
+     ("spec/controllers/\\1_spec.rb". "test/fixtures/\\1.yml")
      ("spec/views/\\1/.*"                      . "test/fixtures/\\1.yml")
      ("test/functional/\\1_controller_test.rb" . "test/fixtures/\\1.yml")
      ("test/unit/\\1_test.rb"                  . "test/fixtures/\\1.yml")
@@ -435,12 +416,12 @@ renders and redirects to find the final controller or view."
    (rspec-fixture
     "z"
     (("app/models/\\1.rb"                      . "spec/fixtures/\\1.yml")
-     ("app/controllers/\\1_controller.rb"      . "spec/fixtures/\\1.yml")
+     ("app/controllers/\\1.rb"      . "spec/fixtures/\\1.yml")
      ("app/views/\\1/.*"                       . "spec/fixtures/\\1.yml")
      ("app/helpers/\\1_helper.rb"              . "spec/fixtures/\\1.yml")
-     ("db/migrate/.*create_\\1.rb"             . "spec/fixtures/\\1.yml")
+     ("schema/migrations/.*_\\1_migration.rb"  . "spec/fixtures/\\1.yml")
      ("spec/models/\\1_spec.rb"                . "spec/fixtures/\\1.yml")
-     ("spec/controllers/\\1_controller_spec.rb". "spec/fixtures/\\1.yml")
+     ("spec/controllers/\\1_spec.rb". "spec/fixtures/\\1.yml")
      ("spec/views/\\1/.*"                      . "spec/fixtures/\\1.yml")
      ("test/functional/\\1_controller_test.rb" . "spec/fixtures/\\1.yml")
      ("test/unit/\\1_test.rb"                  . "spec/fixtures/\\1.yml")
@@ -449,10 +430,10 @@ renders and redirects to find the final controller or view."
    (helper
     "h"
     (("app/models/\\1.rb"                      . "app/helpers/\\1_helper.rb")
-     ("app/controllers/\\1_controller.rb"      . "app/helpers/\\1_helper.rb")
+     ("app/controllers/\\1.rb"      . "app/helpers/\\1_helper.rb")
      ("app/views/\\1/.*"                       . "app/helpers/\\1_helper.rb")
      ("app/helpers/\\1_helper.rb"              . "app/helpers/\\1_helper.rb")
-     ("db/migrate/.*create_\\1.rb"             . "app/helpers/\\1_helper.rb")
+     ("schema/migrations/.*_\\1_migration.rb"  . "app/helpers/\\1_helper.rb")
      ("spec/models/\\1_spec.rb"                . "app/helpers/\\1_helper.rb")
      ("spec/controllers/\\1_spec.rb"           . "app/helpers/\\1_helper.rb")
      ("spec/views/\\1/.*"                      . "app/helpers/\\1_helper.rb")
@@ -463,19 +444,19 @@ renders and redirects to find the final controller or view."
     t)
    (migration
     "i"
-    (("app/controllers/\\1_controller.rb"      . "db/migrate/.*create_\\1.rb")
-     ("app/views/\\1/.*"                       . "db/migrate/.*create_\\1.rb")
-     ("app/helpers/\\1_helper.rb"              . "db/migrate/.*create_\\1.rb")
-     ("app/models/\\1.rb"                      . "db/migrate/.*create_\\1.rb")
-     ("spec/models/\\1_spec.rb"                . "db/migrate/.*create_\\1.rb")
-     ("spec/controllers/\\1_spec.rb"           . "db/migrate/.*create_\\1.rb")
-     ("spec/views/\\1/.*"                      . "db/migrate/.*create_\\1.rb")
-     ("test/functional/\\1_controller_test.rb" . "db/migrate/.*create_\\1.rb")
-     ("test/unit/\\1_test.rb#test_\\2"         . "db/migrate/.*create_\\1.rb#\\2")
-     ("test/unit/\\1_test.rb"                  . "db/migrate/.*create_\\1.rb")
-     (t                                        . "db/migrate/"))
+    (("app/controllers/\\1.rb"      . "schema/migrations/.*_\\1_migration.rb")
+     ("app/views/\\1/.*"                       . "schema/migrations/.*_\\1_migration.rb")
+     ("app/helpers/\\1_helper.rb"              . "schema/migrations/.*_\\1_migration.rb")
+     ("app/models/\\1.rb"                      . "schema/migrations/.*_\\1_migration.rb")
+     ("spec/models/\\1_spec.rb"                . "schema/migrations/.*_\\1_migration.rb")
+     ("spec/controllers/\\1_spec.rb"           . "schema/migrations/.*_\\1_migration.rb")
+     ("spec/views/\\1/.*"                      . "schema/migrations/.*_\\1_migration.rb")
+     ("test/functional/\\1_controller_test.rb" . "schema/migrations/.*_\\1_migration.rb")
+     ("test/unit/\\1_test.rb#test_\\2"         . "schema/migrations/.*_\\1_migration.rb#\\2")
+     ("test/unit/\\1_test.rb"                  . "schema/migrations/.*_\\1_migration.rb")
+     (t                                        . "schema/migrations/"))
     (lambda (path)
-      (rinari-generate "migration"
+      (rinari-merb-generate "migration"
 		       (and (string-match ".*create_\\(.+?\\)\.rb" path)
 			    (match-string 1 path)))))
    (environment "e" ((t . "config/environments/")) nil)
@@ -488,18 +469,7 @@ renders and redirects to find the final controller or view."
    (stylesheet "y" ((t . "public/stylesheets/.*")) nil)
    (javascript "j" ((t . "public/javascripts/.*")) nil)
    (plugin "l" ((t . "vendor/plugins/")) nil)
-   (file-in-project "f" ((t . ".*")) nil)
-   (by-context
-    ";"
-    (((lambda () ;; Find-by-Context
-	(let ((path (buffer-file-name))
-	      cv)
-	  (when (string-match ".*/\\(.+?\\)/\\(.+?\\)\\..*" path)
-	    (setf cv (cons (match-string 1 path) (match-string 2 path)))
-	    (when (re-search-forward "<%=[ \n\r]*render(? *" nil t)
-	      (setf cv (rinari-ruby-values-from-render (car cv) (cdr cv)))
-	      (list (car cv) (cdr cv))))))
-      . "app/views/\\1/\\2.*")))))
+   (file-in-project "f" ((t . ".*")) nil)))
 
 (mapcar
  (lambda (type)
@@ -507,77 +477,76 @@ renders and redirects to find the final controller or view."
 	 (specs (third type))
 	 (make (fourth type)))
      (eval `(defjump
-	      (quote ,(read (format "rinari-find-%S" name)))
+	      (quote ,(read (format "rinari-merb-find-%S" name)))
 	      (quote ,specs)
-	      'rinari-root
+	      'rinari-merb-root
 	      ,(format "Go to the most logical %S given the current location" name)
 	      ,(if make `(quote ,make))
 	      'ruby-add-log-current-method))))
- rinari-jump-schema)
+ rinari-merb-jump-schema)
 
 ;;--------------------------------------------------------------------
 ;; minor mode and keymaps
 
-(defvar rinari-minor-mode-map
+(defvar rinari-merb-minor-mode-map
   (let ((map (make-sparse-keymap)))
     map)
-  "Key map for Rinari minor mode.")
+  "Key map for Rinari-Merb minor mode.")
 
-(defun rinari-bind-key-to-func (key func)
-  (eval `(define-key rinari-minor-mode-map 
+(defun rinari-merb-bind-key-to-func (key func)
+  (eval `(define-key rinari-merb-minor-mode-map 
 	   ,(format "\C-c;%s" key) ,func))
-  (eval `(define-key rinari-minor-mode-map 
+  (eval `(define-key rinari-merb-minor-mode-map 
 	   ,(format "\C-c'%s" key) ,func)))
 
-(defvar rinari-minor-mode-keybindings
-  '(("s" . 'rinari-script)              ("q" . 'rinari-sql)
-    ("e" . 'rinari-insert-erb-skeleton) ("t" . 'rinari-test)
-    ("r" . 'rinari-rake)                ("c" . 'rinari-console)
-    ("w" . 'rinari-web-server)          ("g" . 'rinari-rgrep)
-    ("x" . 'rinari-extract-partial)
-    (";" . 'rinari-find-by-context)     ("'" . 'rinari-find-by-context))
-  "alist mapping of keys to functions in `rinari-minor-mode'")
+(defvar rinari-merb-minor-mode-keybindings
+  '(("s" . 'rinari-merb-script)              ("q" . 'rinari-merb-sql)
+    ("e" . 'rinari-merb-insert-erb-skeleton) ("t" . 'rinari-merb-test)
+    ("r" . 'rinari-merb-rake)                ("c" . 'rinari-merb-console)
+    ("m" . 'rinari-merb-merb)                ("g" . 'rinari-merb-rgrep)
+    ("w" . 'rinari-merb-merb)                ("x" . 'rinari-merb-extract-partial))
+  "alist mapping of keys to functions in `rinari-merb-minor-mode'")
 
-(mapcar (lambda (el) (rinari-bind-key-to-func (car el) (cdr el)))
+(mapcar (lambda (el) (rinari-merb-bind-key-to-func (car el) (cdr el)))
 	(append (mapcar (lambda (el)
 			  (cons (concat "f" (second el))
-				(read (format "'rinari-find-%S" (first el)))))
-			rinari-jump-schema)
-		rinari-minor-mode-keybindings))
+				(read (format "'rinari-merb-find-%S" (first el)))))
+			rinari-merb-jump-schema)
+		rinari-merb-minor-mode-keybindings))
 
-(defun rinari-launch ()
-  "Run `rinari-minor-mode' if inside of a rails projecct,
-otherwise turn `rinari-minor-mode' off if it is on."
+(defun rinari-merb-launch ()
+  "Run `rinari-merb-minor-mode' if inside of a rails projecct,
+otherwise turn `rinari-merb-minor-mode' off if it is on."
   (interactive)
-  (let* ((root (rinari-root)) (r-tags-path (concat root rinari-tags-file-name)))
+  (let* ((root (rinari-merb-root)) (r-tags-path (concat root rinari-merb-tags-file-name)))
     (if root (progn
 	       (set (make-local-variable 'tags-file-name)
 		    (and (file-exists-p r-tags-path) r-tags-path))
-	       (run-hooks 'rinari-minor-mode-hook)
-	       (rinari-minor-mode t))
-      (if rinari-minor-mode (rinari-minor-mode)))))
+	       (run-hooks 'rinari-merb-minor-mode-hook)
+	       (rinari-merb-minor-mode t))
+      (if rinari-merb-minor-mode (rinari-merb-minor-mode)))))
 
-(defvar rinari-major-modes
+(defvar rinari-merb-major-modes
   '('find-file-hook 'mumamo-after-change-major-mode-hook 'dired-mode-hook)
-  "Major Modes from which to launch Rinari.")
+  "Major Modes from which to launch Rinari-Merb.")
 
 (mapcar (lambda (hook)
 	  (eval `(add-hook ,hook
-			   (lambda () (rinari-launch)))))
-	rinari-major-modes)
+			   (lambda () (rinari-merb-launch)))))
+	rinari-merb-major-modes)
 
-(defadvice cd (after rinari-on-cd activate)
-  "Active/Deactive rinari-minor-node when changing into and out
+(defadvice cd (after rinari-merb-on-cd activate)
+  "Active/Deactive rinari-merb-minor-node when changing into and out
   of raills project directories."
-  (rinari-launch))
+  (rinari-merb-launch))
 
 ;;;###autoload
-(define-minor-mode rinari-minor-mode
-  "Enable Rinari minor mode providing Emacs support for working
+(define-minor-mode rinari-merb-minor-mode
+  "Enable Rinari-Merb minor mode providing Emacs support for working
 with the Ruby on Rails framework."
   nil
-  " Rinari"
-  rinari-minor-mode-map)
+  " Rinari-Merb"
+  rinari-merb-minor-mode-map)
 
-(provide 'rinari)
-;;; rinari.el ends here
+(provide 'rinari-merb)
+;;; rinari-merb.el ends here

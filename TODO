@@ -30,9 +30,76 @@ promotion!!
 
 - [[http://www.emacswiki.org/cgi-bin/wiki/EmacsScreencasts]]
 
-* TODO updates to finders
+* DONE improvements to finders
+  :PROPERTIES:
+  :suggested-by: vylu
+  :END:
+
 When finding a view from a controller if there is no method name, then
-select from the related directory
+select from the related directory.
+
+more generally...
+
+if rinari-find-* is called with a prefix argument then just run the
+default find at the end
+
+or even better...
+
+*implemented* if no file is found with a find pair, then keep moving.
+
+* TODO Merb support [0/3]
+  :PROPERTIES:
+  :suggested-by: Jorge Calás Lozano
+  :END:
+
+** TODO pull into rinari-merb
+rinari-merb (minami? why not just rinari-merb? what if someone create a
+rinari version for sinatra? sinasi?)
+
+** TODO load automatically
+it doesn't load automatically when you visit a project file or the
+project directory (with dired). So I should call minami-minor-mode
+
+** TODO jump support
+jump: it doesn't really jump, but seems to look for the correct paths,
+at least that is what *Messages* buffer says:
+
+("app/controllers/\\1.rb" "asset")
+Searching /home/jorge/dev/jorgecalas/library/app/models/app/controllers/ ...
+("app/controllers/\\1.rb" "assets")
+("app/controllers/\\1.rb" "asset")
+Searching /home/jorge/dev/jorgecalas/library/app/models/app/controllers/
+... [2 times]
+
+When I'm on the project directory (dired) it finds files correctly,
+right now I tried minami-find-model, minami-find-controller.
+
+minami-find-rspec:
+
+In the current merb you don't don't have spec/controllers or spec/views
+(although you can, of course) but spec/requests is encourage. So
+app/controllers/assets.rb should map spec/requests/assets_spec.rb
+
+* TODO add find-by context
+  :PROPERTIES:
+  :suggested-by: vylu
+  :END:
+
+Hi Eric,
+As I understand, we are talking here about rinari-find-by-context
+function, which is used to open file by current context. For example
+if I am in <%= render :partial => "something_anything" %>, it should
+open _something_anything.html.erb partial. This functionality is still
+left in rhtml mode (although it is broken there), but I think it
+should be moved to rinari again.
+
+Follow any of the following within two lines (up or down)
+- stylesheet
+- javascript
+- link_to
+- link_to_remote
+- submit_tag
+- render
 
 * DONE upodate documentation for instillation
   :PROPERTIES:
