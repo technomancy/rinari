@@ -179,12 +179,13 @@ run)."
                          (completing-read "Ruby Implementation: "
                                           (mapc #'car inf-ruby-implementations))
                        inf-ruby-default-implementation)))
+  (setq impl (or impl "ruby"))
 
-  (let ((buffer-name (format "*%s*" (or impl "ruby")))
-        (cmd (cdr (assoc (or impl "ruby") inf-ruby-implementations))))
+  (let ((buffer-name (format "*%s*" impl))
+        (cmd (cdr (assoc impl inf-ruby-implementations))))
     (if (not (comint-check-proc buffer-name))
         (let ((cmdlist (split-string cmd)))
-          (set-buffer (apply 'make-comint "ruby" (car cmdlist)
+          (set-buffer (apply 'make-comint impl (car cmdlist)
                              nil (cdr cmdlist)))
           (inf-ruby-mode)))
     (setq inf-ruby-buffer buffer-name)
