@@ -20,13 +20,13 @@
 
 ;;; Code:
 
-(defconst ruby-mode-revision "$Revision$"
-  "Ruby mode revision string.")
-
-(defconst ruby-mode-version
-  (and (string-match "[0-9.]+" ruby-mode-revision)
-       (substring ruby-mode-revision (match-beginning 0) (match-end 0)))
+(defconst ruby-mode-version "1.0"
   "Ruby mode version number.")
+
+(defconst ruby-keyword-end-re
+  (if (string-match "\\_>" "ruby")
+      "\\_>"
+    "\\>"))
 
 (defconst ruby-block-beg-keywords
   '("class" "module" "def" "if" "unless" "case" "while" "until" "for" "begin" "do")
@@ -37,7 +37,7 @@
   "Regexp to match the beginning of blocks.")
 
 (defconst ruby-non-block-do-re
-  (concat (regexp-opt '("while" "until" "for" "rescue") t) "\\_>")
+  (concat (regexp-opt '("while" "until" "for" "rescue") t) ruby-keyword-end-re)
   "Regexp to match keywords that nest without blocks.")
 
 (defconst ruby-indent-beg-re
@@ -221,6 +221,12 @@ Also ignores spaces after parenthesis when 'space."
 (defcustom ruby-use-encoding-map t
   "Use `ruby-encoding-map' to set encoding magic comment if this is non-nil."
   :type 'boolean :group 'ruby)
+
+;; Safe file variables
+(put 'ruby-indent-tabs-mode 'safe-local-variable 'booleanp)
+(put 'ruby-indent-level 'safe-local-variable 'integerp)
+(put 'ruby-comment-column 'safe-local-variable 'integerp)
+(put 'ruby-deep-arglist 'safe-local-variable 'booleanp)
 
 (eval-when-compile (require 'cl))
 (defun ruby-imenu-create-index-in-block (prefix beg end)
@@ -599,7 +605,7 @@ and `\\' when preceded by `?'."
        ((looking-at (concat "\\<\\(" ruby-block-beg-re "\\)\\>"))
         (and
          (save-match-data
-           (or (not (looking-at "do\\_>"))
+           (or (not (looking-at (concat "do" ruby-keyword-end-re)))
                (save-excursion
                  (back-to-indentation)
                  (not (looking-at ruby-non-block-do-re)))))
@@ -1200,19 +1206,33 @@ isn't in a string or another comment."
   (when (not (nth 3 (syntax-ppss)))
     (string-to-syntax "!")))
 
-(defun ruby-in-non-here-doc-string-p ()
-  "Returns whether or not the point is in a comment or
-a string that's not a heredoc.
+(unless (functionp 'syntax-ppss)
+  (defun syntax-ppss (&optional pos)
+    (parse-partial-sexp (point-min) (or pos (point)))))
 
-This function assumes that all strings with generic delimiters
-are heredocs. In ruby-mode, regexps also use generic delimiters,
-so text in them will count as text in heredocs for the purpose
-of this function. See `parse-partial-sexp'."
-  ;; TODO: We may be able to make this more accurate
-  ;; by looking at the character at (nth 3 syntax)
-  (let ((syntax (syntax-ppss)))
-    (or (nth 4 syntax)
-        (numberp (nth 3 syntax)))))
+(defun ruby-in-ppss-context-p (context &optional ppss)
+  (let ((ppss (or ppss (syntax-ppss (point)))))
+    (if (cond
+         ((eq context 'anything)
+          (or (nth 3 ppss)
+              (nth 4 ppss)))
+         ((eq context 'string)
+          (nth 3 ppss))
+         ((eq context 'heredoc)
+          (and (nth 3 ppss)
+               ;; If it's generic string, it's a heredoc and we don't care
+               ;; See `parse-partial-sexp'
+               (not (numberp (nth 3 ppss)))))
+         ((eq context 'non-heredoc)
+          (and (ruby-in-ppss-context-p 'anything)
+               (not (ruby-in-ppss-context-p 'heredoc))))
+         ((eq context 'comment)
+          (nth 4 ppss))
+         (t
+          (error (concat
+                  "Internal error on `ruby-in-ppss-context-p': "
+                  "context name `" (symbol-name context) "' is unknown"))))
+        t)))
 
 (defun ruby-in-here-doc-p ()
   "Returns whether or not the point is in a heredoc."
@@ -1221,7 +1241,7 @@ of this function. See `parse-partial-sexp'."
       (beginning-of-line)
       (catch 'found-beg
         (while (re-search-backward ruby-here-doc-beg-re nil t)
-          (if (not (or (syntax-ppss-context (syntax-ppss))
+          (if (not (or (ruby-in-ppss-context-p 'anything)
                        (ruby-here-doc-find-end old-point)))
               (throw 'found-beg t)))))))
 
@@ -1262,7 +1282,7 @@ containing the heredoc beginning so that cases where multiple
 heredocs are started on one line are handled correctly."
   (save-excursion
     (goto-char (match-beginning 0))
-    (unless (or (ruby-in-non-here-doc-string-p)
+    (unless (or (ruby-in-ppss-context-p 'non-heredoc)
                 (ruby-in-here-doc-p))
       (string-to-syntax "|"))))
 
@@ -1274,13 +1294,13 @@ See the definition of `ruby-font-lock-syntactic-keywords'."
     ;; so we can just give up.
     ;; This means we aren't doing a full-document search
     ;; every time we enter a character.
-    (when (eq (syntax-ppss-context pss) 'string)
+    (when (ruby-in-ppss-context-p 'heredoc pss)
       (save-excursion
-        (goto-char (nth 8 pss))
+        (goto-char (nth 8 pss))  ; Go to the beginning of heredoc.
         (let ((eol (point)))
           (beginning-of-line)
           (if (and (re-search-forward (ruby-here-doc-beg-match) eol t) ; If there is a heredoc that matches this line...
-                   (null (syntax-ppss-context (syntax-ppss))) ; And that's not inside a heredoc/string/comment...
+                   (not (ruby-in-ppss-context-p 'anything)) ; And that's not inside a heredoc/string/comment...
                    (progn (goto-char (match-end 0)) ; And it's the last heredoc on its line...
                           (not (re-search-forward ruby-here-doc-beg-re eol t))))
               (string-to-syntax "|")))))))
@@ -1350,7 +1370,8 @@ See `font-lock-syntax-table'.")
              "while"
              "yield")
            t)
-          "\\_>\\)")
+          "\\)"
+          ruby-keyword-end-re)
          2)
    ;; here-doc beginnings
    (list ruby-here-doc-beg-re 0 'font-lock-string-face)
