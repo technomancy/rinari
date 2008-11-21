@@ -30,23 +30,6 @@ promotion!!
 
 - [[http://www.emacswiki.org/cgi-bin/wiki/EmacsScreencasts]]
 
-* DONE improvements to finders
-  :PROPERTIES:
-  :suggested-by: vylu
-  :END:
-
-When finding a view from a controller if there is no method name, then
-select from the related directory.
-
-more generally...
-
-if rinari-find-* is called with a prefix argument then just run the
-default find at the end
-
-or even better...
-
-*implemented* if no file is found with a find pair, then keep moving.
-
 * TODO Merb support [1/4]
   :PROPERTIES:
   :suggested-by: Jorge Calás Lozano
@@ -106,6 +89,37 @@ Follow any of the following within two lines (up or down)
 - link_to_remote
 - submit_tag
 - render
+
+* DONE improvements to finders
+  :PROPERTIES:
+  :suggested-by: vylu
+  :END:
+
+** DONE Stop suggesting files upon first found
+
+#+begin_comment vylu
+
+I see one problem probably related to latest rinari-find changes... If
+specific version of a find DO NOT fail (for example, I try to open
+controller from model and controller is found), requested file is
+opened, but find-file promt is still left -- I have to press C-g to
+close file-find or choose another file. I think, find-file promt
+should be shown only if requested file is not found.
+
+#+end_comment
+
+** default to a more general find upon failure
+When finding a view from a controller if there is no method name, then
+select from the related directory.
+
+more generally...
+
+if rinari-find-* is called with a prefix argument then just run the
+default find at the end
+
+or even better...
+
+*implemented* if no file is found with a find pair, then keep moving.
 
 * DONE upodate documentation for instillation
   :PROPERTIES:
