@@ -90,7 +90,7 @@ Follow any of the following within two lines (up or down)
 - submit_tag
 - render
 
-* DONE improvements to finders
+* TODO improvements to finders
   :PROPERTIES:
   :suggested-by: vylu
   :END:
@@ -120,6 +120,35 @@ default find at the end
 or even better...
 
 *implemented* if no file is found with a find pair, then keep moving.
+
+** TODO complex controllers
+   :PROPERTIES:
+   :suggested-by: rejeep
+   :END:
+
+> But say I have this controller and action:
+> class Reports::Nix::UsersController < ReportsController
+>   def index
+>     # I am here
+>   end
+> end
+>
+> And now I do the same thing, trying to find the view:
+> M-x rinari-find-view
+>
+> But no view is found in this case. The corresponding view in this case
+> should have been app/views/reports/nix/users/index.html.erb.
+>
+
+Hi,
+
+I've never encountered that situation before.  It sounds like when going
+from a controller to a view splitting the controller name on :: and then
+joining the parts as directories would handle this situation.  And then
+vise-versa going from a view to a controller.  I'll try to implement
+this and let you know when it's working.
+
+Thanks for the suggestion -- Eric
 
 * DONE upodate documentation for instillation
   :PROPERTIES:
