@@ -29,6 +29,8 @@
 ;;   SyntaxError: /home/eschulte/united/org/work/arf/arf/lib/cluster.rb:35: syntax error, unexpected '~', expecting kEND
 ;;               similarity = comparison_cache[m][n] ||= clusters[m] ~ clusters[n]
 ;;
+;; Looks like the input ring isn't populated; M-p and M-n don't work
+;;
 
 (require 'comint)
 (require 'compile)
@@ -182,16 +184,11 @@ run)."
   (setq impl (or impl "ruby"))
 
   (let ((buffer-name (format "*%s*" impl))
-        (cmd (cdr (assoc impl inf-ruby-implementations))))
-    (if (not (comint-check-proc buffer-name))
-        (let ((cmdlist (split-string cmd)))
-          (set-buffer (apply 'make-comint impl (car cmdlist)
-                             nil (cdr cmdlist)))
-          (inf-ruby-mode)))
-    (setq inf-ruby-buffer buffer-name)
-    (pop-to-buffer buffer-name)))
+        (command (cdr (assoc impl inf-ruby-implementations))))
+    (run-ruby command buffer-name)))
 
-(defun run-ruby (cmd)
+;;;###autoload
+(defun run-ruby (command &optional buffer-name)
   "Run an inferior Ruby process, input and output via buffer *ruby*.
 If there is a process already running in `*ruby*', switch to that buffer.
 With argument, allows you to edit the command line (default is value
@@ -199,17 +196,17 @@ of `ruby-program-name').  Runs the hooks `inferior-ruby-mode-hook'
 \(after the `comint-mode-hook' is run).
 \(Type \\[describe-mode] in the process buffer for a list of commands.)"
 
-  (interactive (list (if current-prefix-arg
-			 (read-string "Run Ruby: " ruby-program-name)
-			 ruby-program-name)))
-  (if (not (comint-check-proc "*ruby*"))
-      (let ((cmdlist (split-string cmd)))
-	(set-buffer (apply 'make-comint "ruby" (car cmdlist)
-			   nil (cdr cmdlist)))
-	(inf-ruby-mode)))
-  (setq ruby-program-name cmd)
-  (setq ruby-buffer "*ruby*")
-  (pop-to-buffer "*ruby*"))
+  (interactive)
+  (setq command (or command (cdr (assoc inf-ruby-default-implementation
+                                        inf-ruby-implementations))))
+
+  (if (not (comint-check-proc buffer-name))
+      (let ((commandlist (split-string command)))
+        (set-buffer (apply 'make-comint buffer-name (car commandlist)
+                           nil (cdr commandlist)))
+        (inf-ruby-mode)))
+  (setq inf-ruby-buffer buffer-name)
+  (pop-to-buffer buffer-name)))
 
 (defun inf-ruby-proc ()
   "Returns the current IRB process. See variable inf-ruby-buffer."
