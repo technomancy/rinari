@@ -201,12 +201,14 @@ of `ruby-program-name').  Runs the hooks `inferior-ruby-mode-hook'
                                         inf-ruby-implementations))))
 
   (if (not (comint-check-proc buffer-name))
-      (let ((commandlist (split-string command)))
+      (let* ((commandlist (split-string command))
+	     (buffer-name "ruby"))
         (set-buffer (apply 'make-comint buffer-name (car commandlist)
                            nil (cdr commandlist)))
         (inf-ruby-mode)))
+  ;; (setq ruby-program-name cmd)
   (setq inf-ruby-buffer buffer-name)
-  (pop-to-buffer buffer-name)))
+  (pop-to-buffer buffer-name))
 
 (defun inf-ruby-proc ()
   "Returns the current IRB process. See variable inf-ruby-buffer."
