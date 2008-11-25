@@ -173,9 +173,9 @@ prefix argument allows editing of the console command arguments."
 		    script)))
     (run-ruby command)
     (save-excursion
-      (pop-to-buffer "*ruby*")
-      (set (make-local-variable 'inferior-ruby-first-prompt-pattern) "^>> ")
-      (set (make-local-variable 'inferior-ruby-prompt-pattern) "^>> ")
+      (set-buffer "*ruby*")
+      (set (make-local-variable 'inf-ruby-first-prompt-pattern) "^>> ")
+      (set (make-local-variable 'inf-ruby-prompt-pattern) "^>> ")
       (rinari-launch))))
 
 (defun rinari-sql ()
