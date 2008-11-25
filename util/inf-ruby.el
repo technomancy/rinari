@@ -206,7 +206,7 @@ of `ruby-program-name').  Runs the hooks `inferior-ruby-mode-hook'
                            nil (cdr commandlist)))
         (inf-ruby-mode)))
   (setq inf-ruby-buffer buffer-name)
-  (pop-to-buffer buffer-name)))
+  (pop-to-buffer buffer-name))
 
 (defun inf-ruby-proc ()
   "Returns the current IRB process. See variable inf-ruby-buffer."
