@@ -26,6 +26,8 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl))
+
 (defconst ruby-keyword-end-re
   (if (string-match "\\_>" "ruby")
       "\\_>"
@@ -231,7 +233,6 @@ Also ignores spaces after parenthesis when 'space."
 (put 'ruby-comment-column 'safe-local-variable 'integerp)
 (put 'ruby-deep-arglist 'safe-local-variable 'booleanp)
 
-(eval-when-compile (require 'cl))
 (defun ruby-imenu-create-index-in-block (prefix beg end)
   "Create an imenu index of methods inside a block."
   (let ((index-alist '()) (case-fold-search nil)
