@@ -8,6 +8,10 @@
 ;; Created: 2006-11-10
 ;; Keywords: ruby, rails, project, convenience, web
 ;; EmacsWiki: Rinari
+;; Package-Requires: ((ruby-mode "1.0")
+;;                    (inf-ruby "2.0")
+;;                    (ruby-compilation "0.5")
+;;                    (jump "2.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -546,6 +550,7 @@ renders and redirects to find the final controller or view."
 			rinari-jump-schema)
 		rinari-minor-mode-keybindings))
 
+;;;###autoload
 (defun rinari-launch ()
   "Run `rinari-minor-mode' if inside of a rails projecct,
 otherwise turn `rinari-minor-mode' off if it is on."
@@ -558,14 +563,11 @@ otherwise turn `rinari-minor-mode' off if it is on."
 	       (rinari-minor-mode t))
       (if rinari-minor-mode (rinari-minor-mode)))))
 
-(defvar rinari-major-modes
-  '('find-file-hook 'mumamo-after-change-major-mode-hook 'dired-mode-hook)
-  "Major Modes from which to launch Rinari.")
+;;;###autoload
+(dolist (hook '(ruby-mode-hook mumamo-after-change-major-mode-hook
+                               dired-mode-hook))
+  (add-hook hook 'rinari-launch))
 
-(mapcar (lambda (hook)
-	  (eval `(add-hook ,hook
-			   (lambda () (rinari-launch)))))
-	rinari-major-modes)
 
 (defadvice cd (after rinari-on-cd activate)
   "Active/Deactive rinari-minor-node when changing into and out
