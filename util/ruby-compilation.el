@@ -7,7 +7,7 @@
 ;; Version: 0.5
 ;; Created: 2008-08-23
 ;; Keywords: test convenience
-;; Package-Requires: (("ruby-mode") ("inf-ruby"))
+;; Package-Requires: ((ruby-mode "1.0") (inf-ruby "2.0"))
 
 ;;; License:
 
